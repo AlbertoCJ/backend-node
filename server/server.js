@@ -22,7 +22,7 @@ app.use(require('./routes/index'));
 
 
 
-mongoose.connect('mongodb://localhost:27017/appBD', {
+mongoose.connect(`mongodb://localhost:27017/${ process.env.NAMEDB }`, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }, (err, res) => {

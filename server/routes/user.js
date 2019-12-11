@@ -2,10 +2,11 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const _ = require('underscore');
 const User = require('../models/user');
+const { verifyToken } = require('../middlewares/authentication');
 
 const app = express();
 
-app.get('/user/:id', (req, res) => {
+app.get('/user/:id', verifyToken, (req, res) => {
     let id = req.params.id;
 
     User.findById(id, (err, userDB) => {
@@ -31,7 +32,7 @@ app.post('/user', (req, res) => {
 
     let user = new User({
         name: body.name,
-        mail: body.mail,
+        email: body.email,
         password: bcrypt.hashSync(body.password, 10)
     });
 
@@ -50,10 +51,10 @@ app.post('/user', (req, res) => {
     });
 })
 
-app.put('/user/:id', (req, res) => {
+app.put('/user/:id', verifyToken, (req, res) => {
 
     let id = req.params.id;
-    let body = _.pick(req.body, ['name', 'mail', 'state']); // Undercore library
+    let body = _.pick(req.body, ['name', 'email', 'state']); // Undercore library
 
     User.findByIdAndUpdate(id, body, { new: true, runValidators: true }, (err, userDB) => {
 
@@ -73,7 +74,7 @@ app.put('/user/:id', (req, res) => {
 
 })
 
-app.delete('/user/:id', (req, res) => {
+app.delete('/user/:id', verifyToken, (req, res) => {
     let id = req.params.id;
 
     User.findByIdAndRemove(id, (err, userRemoved) => {
