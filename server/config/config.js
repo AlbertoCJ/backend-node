@@ -6,6 +6,8 @@ process.env.NAMEDB = 'appBD'
 
 // Path files dataset
 process.env.PATH_FILES_DATASET = 'uploads/filesDatasets';
+// Extensions allowed
+process.env.EXTENSION_ALLOWED = ['arff'];
 
 // Date expired token
 process.env.EXPIRED_TOKEN = 60 * 60 * 24 * 30;

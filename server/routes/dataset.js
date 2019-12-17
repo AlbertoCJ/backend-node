@@ -46,7 +46,7 @@ app.post('/dataset', (req, res) => {
     let fileNameSplit = file.name.split('.');
     let extension = fileNameSplit[fileNameSplit.length - 1];
 
-    let extensionsAllowed = ['arff'];
+    let extensionsAllowed = process.env.EXTENSION_ALLOWED;
 
     if (extensionsAllowed.indexOf(extension) < 0) {
         return res.status(400).json({
