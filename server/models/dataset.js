@@ -12,6 +12,21 @@ let datasetSchema = new Schema({
     file: {
         type: String,
         required: [true, 'El fichero es necesario']
+    },
+    extension: {
+        type: String
+    },
+    date_creation: {
+        type: Date
+    },
+    name: {
+        type: String
+    },
+    full_name: {
+        type: String
+    },
+    size: {
+        type: String
     }
 });
 

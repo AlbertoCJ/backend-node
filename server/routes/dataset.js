@@ -44,7 +44,12 @@ app.post('/dataset', (req, res) => {
 
     let file = req.files.file;
     let fileNameSplit = file.name.split('.');
+    let name = '';
+    for (let i = 0; i < fileNameSplit.length - 1; i++) {
+        name += fileNameSplit[i];
+    }
     let extension = fileNameSplit[fileNameSplit.length - 1];
+    let size = file.size;
 
     let extensionsAllowed = process.env.EXTENSION_ALLOWED;
 
@@ -76,6 +81,11 @@ app.post('/dataset', (req, res) => {
             });
 
         dataset.file = fileNameCustom;
+        dataset.extension = extensionsAllowed;
+        dataset.date_creation = date;
+        dataset.name = name;
+        dataset.full_name = file.name;
+        dataset.size = size;
 
         dataset.save((err, datasetDB) => {
             if (err) {
