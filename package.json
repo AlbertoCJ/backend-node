@@ -1,31 +1,35 @@
 {
-  "name": "backend-node",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AlbertoCJ/backend-node.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/AlbertoCJ/backend-node/issues"
-  },
-  "homepage": "https://github.com/AlbertoCJ/backend-node#readme",
-  "dependencies": {
-    "bcrypt": "^3.0.6",
-    "body-parser": "^1.19.0",
-    "cors": "^2.8.5",
-    "express": "^4.17.1",
-    "express-fileupload": "^1.1.6",
-    "jsonwebtoken": "^8.5.1",
-    "mongoose": "^5.8.0",
-    "mongoose-unique-validator": "^2.0.3",
-    "underscore": "^1.9.1"
-  },
-  "devDependencies": {}
+    "name": "backend-node",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "nodemon server/server.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AlbertoCJ/backend-node.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/AlbertoCJ/backend-node/issues"
+    },
+    "homepage": "https://github.com/AlbertoCJ/backend-node#readme",
+    "dependencies": {
+        "axios": "^0.19.0",
+        "bcrypt": "^3.0.6",
+        "body-parser": "^1.19.0",
+        "cors": "^2.8.5",
+        "express": "^4.17.1",
+        "express-fileupload": "^1.1.6",
+        "file-api": "^0.10.4",
+        "form-data": "^3.0.0",
+        "jsonwebtoken": "^8.5.1",
+        "mongoose": "^5.8.0",
+        "mongoose-unique-validator": "^2.0.3",
+        "underscore": "^1.9.1"
+    },
+    "devDependencies": {}
 }
