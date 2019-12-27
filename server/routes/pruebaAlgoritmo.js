@@ -3,92 +3,54 @@ const express = require('express');
 const _ = require('underscore');
 // const User = require('../models/user');
 const { verifyToken } = require('../middlewares/authentication');
-const axios = require('axios');
-var FormData = require('form-data');
 var fs = require('fs');
 const path = require('path');
-const FileAPI = require('file-api'),
-    File = FileAPI.File,
-    FileList = FileAPI.FileList,
-    FileReader = FileAPI.FileReader;
-
+const request = require('request');
 
 const app = express();
 
+app.post('/pruebaAlgorithm', (req, res) => {
 
+    let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/weather-11-4-295.arff`);
 
-app.post('/algorithm', (req, res) => {
-    // let body = req.body;
-
-    const config = {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-            'accept': 'text/uri-list'
-        }
+    if (!fs.existsSync(pathFile)) {
+        res.json({
+            ok: false,
+            pathFile,
+            message: 'No existe el fichero'
+        });
     }
 
-    // const requestBody = {
-    //     file: '../uploads/filesDatasets/weather-11-6-555.arff',
-    //     batchSize: 100,
-    //     useKernelEstimator: 0,
-    //     useSupervisedDiscretization: 0,
-    //     validation: 'CrossValidation',
-    //     validationNum: 10
-    // } NO VALE
-    // console.log(`${process.env.PATH_FILES_DATASET}/weather-11-6-555.arff`);
-    let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/weather-11-6-555.arff`);
-    // console.log(pathFile);
-    // console.log(new File(`../${process.env.PATH_FILES_DATASET}/weather-11-6-555.arff`));
-    // const file = new File(pathFile);
+    const headers = {
+        'Content-Type': 'multipart/form-data',
+        'accept': 'text/uri-list'
+    };
+
+    const formData = {
+        file: fs.createReadStream(pathFile),
+        batchSize: 100,
+        useKernelEstimator: 0,
+        useSupervisedDiscretization: 0,
+        validation: 'CrossValidation',
+        validationNum: 10
+    };
 
 
-    // const blob = new Blob(`../${process.env.PATH_FILES_DATASET}/weather-11-6-555.arff`);
-    const formData = new FormData();
-    formData.append('file', fs.createReadStream(`../../${process.env.PATH_FILES_DATASET}/weather-11-6-555.arff`));
-    formData.append('batchSize', 100);
-    formData.append('useKernelEstimator', 0);
-    formData.append('useSupervisedDiscretization', 0);
-    formData.append('validation', 'CrossValidation');
-    formData.append('validationNum', 10);
+    request.post({ url: 'http://localhost:8081/algorithm/NaiveBayes', headers: headers, formData: formData }, function(err, httpResponse, body) {
+        if (err) {
+            res.json({
+                ok: false,
+                err
+            });
+        }
 
-
-    res.json({
-        ok: true,
-        data: formData
+        res.json({
+            ok: true,
+            taskUrl: body
+        });
     });
 
-    // const options = {
-    //     hostname: 'localhost',
-    //     port: 8081,
-    //     path: '/algorithm/NaiveBayes',
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'multipart/form-data',
-    //         'accept': 'text/uri-list'
-    //     } NO VALE
-    // }
-
-
-    // let resp = null;
-    // axios.post('http://localhost:8081/algorithm/NaiveBayes', formData, config)
-    //     .then(function(response) {
-    //         console.log(response);
-    //         res.json({
-    //             ok: true,
-    //             data: response
-    //         });
-    //     })
-    //     .catch(function(error) {
-    //         console.log('EEERROOOOOOOORRR', error);
-    //         res.json({
-    //             ok: true,
-    //             data: error
-    //         });
-    //     });
-
-})
-
-
+});
 
 
 module.exports = app;
