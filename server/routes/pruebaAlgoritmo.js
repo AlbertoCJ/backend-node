@@ -1,9 +1,9 @@
 const express = require('express');
 // const bcrypt = require('bcrypt');
-const _ = require('underscore');
+// const _ = require('underscore');
 // const User = require('../models/user');
 const { verifyToken } = require('../middlewares/authentication');
-var fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 const request = require('request');
 
@@ -11,7 +11,8 @@ const app = express();
 
 app.post('/pruebaAlgorithm', (req, res) => {
 
-    let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/weather-11-4-295.arff`);
+    let fileName = 'weather-11-4-295.arff';
+    let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileName }`);
 
     if (!fs.existsSync(pathFile)) {
         res.json({
@@ -28,11 +29,11 @@ app.post('/pruebaAlgorithm', (req, res) => {
 
     const formData = {
         file: fs.createReadStream(pathFile),
-        batchSize: 100,
-        useKernelEstimator: 0,
-        useSupervisedDiscretization: 0,
-        validation: 'CrossValidation',
-        validationNum: 10
+        // batchSize: 100,
+        // useKernelEstimator: 0,
+        // useSupervisedDiscretization: 0,
+        // validation: 'CrossValidation',
+        // validationNum: 10
     };
 
 

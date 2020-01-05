@@ -1,71 +1,72 @@
 const express = require('express');
-const fileUpload = require('express-fileupload');
 const { verifyToken } = require('../middlewares/authentication');
+const fs = require('fs');
+const path = require('path');
+const request = require('request');
+
 const app = express();
 
-// default options
-app.use(fileUpload());
-
 app.post('/algorithm', (req, res) => {
-    console.log(req);
-    if (!req.files || Object.keys(req.files).length === 0) {
-        return res.status(400).json({
+    let fileName = 'weather-11-6-807.arff';
+    let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileName }`);
+
+    if (!fs.existsSync(pathFile)) {
+        res.json({
             ok: false,
-            err: {
-                message: 'No files were uploaded.234'
-            }
+            pathFile,
+            message: 'No existe el fichero'
         });
     }
 
-    let file = req.files.file;
+    const headers = {
+        'Content-Type': 'multipart/form-data',
+        'accept': 'text/uri-list'
+    };
 
-    const config = {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-            'accept': 'text/uri-list'
-        }
-    }
-
-    // const formData = new FormData();
-    // formData.append('file', file, file.name);
-
-    let data = {
-        file
+    const formData = {
+        file: fs.createReadStream(pathFile),
         // batchSize: 100,
         // useKernelEstimator: 0,
         // useSupervisedDiscretization: 0,
         // validation: 'CrossValidation',
         // validationNum: 10
-    }
+    };
 
-    // axios.post('http://localhost:8081/algorithm/NaiveBayes', formData, config)
-    //     .then(function(response) {
-    //         console.log(response);
-    //         res.json({
-    //             ok: true,
-    //             data: response
-    //         });
-    //     })
-    //     .catch(function(error) {
-    //         console.log('EEERROOOOOOOORRR', error);
-    //         res.json({
-    //             ok: true,
-    //             data: error
-    //         });
-    //     });
 
-    // const formData = new FormData();
-    // formData.append('file', file, file.name);
-    // formData.append('batchSize', 100);
-    // formData.append('useKernelEstimator', 0);
-    // formData.append('useSupervisedDiscretization', 0);
-    // formData.append('validation', 'CrossValidation');
-    // formData.append('validationNum', 10);
-
-    res.json({
-        ok: true,
-        file
+    request.post({ url: 'http://localhost:8081/algorithm/NaiveBayes', headers: headers, formData: formData }, function(err, httpResponse, body) {
+        if (err) {
+            res.json({
+                ok: false,
+                err
+            });
+        }
+        // checkTask(body.taskUrl);
+        res.json({
+            ok: true,
+            taskUrl: body
+        });
     });
+
+    // let checkTask = (taskUrl) => {
+    //     console.log('ENTRA');
+    //     // let stop = false;
+
+
+    //     // request.get({ url: taskUrl }, function(err, httpResponse, body) {
+    //     //     if (err) {
+    //     //         res.json({
+    //     //             ok: false,
+    //     //             err
+    //     //         });
+    //     //     }
+
+    //     //     res.json({
+    //     //         ok: true,
+    //     //         taskUrl: body
+    //     //     });
+    //     // });
+
+    // };
 
 });
 
