@@ -104,5 +104,35 @@ app.post('/containers/:id', (req, res) => {
 });
 
 // TODO: Implementar run container, para generar un contenedor partir del puerto 60000
+app.post('/container/run', (req, res) => {
+
+    let config = {
+        "HostConfig": {
+            "Links": ["mongodb:mongodb"],
+            "PortBindings": {
+                "8080/tcp": [{
+                    "HostPort": "8080"
+                }]
+            }
+        }
+    }
+
+    docker.run('jguweka', ['bash', 'catalina.sh', 'run'], process.stdout, config) // TODO: Como hacer para que no pinte la ejecucion de catalina.sh
+        .then(function(data) {
+            var outputData = data[0];
+            var containerData = data[1];
+
+            res.json({
+                ok: true,
+                data
+            });
+        }).catch(function(err) {
+            res.status(500).json({
+                ok: false,
+                error: err
+            });
+        });
+    // 'catalina.sh', 'run'
+});
 
 module.exports = app;
