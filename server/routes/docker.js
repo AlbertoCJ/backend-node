@@ -8,17 +8,23 @@ const docker = new Docker({ host: 'localhost', port: 2375 });
 app.post('/containers', (req, res) => {
 
     let status = req.body.status;
-    let statusList = ['created', 'restarting', 'running', 'removing', 'paused', 'exited', 'dead'];
-    if (statusList.indexOf(status) < 0) {
-        return res.status(400).json({
-            ok: false,
-            err: {
-                message: 'Status required, the list of status are ' + statusList.join(', ')
-            }
-        });
+    let config = {}
+    if (status === 'all') {
+        config = { all: true };
+    } else {
+        let statusList = ['created', 'restarting', 'running', 'removing', 'paused', 'exited', 'dead'];
+        if (statusList.indexOf(status) < 0) {
+            return res.status(400).json({
+                ok: false,
+                err: {
+                    message: 'Status required, the list of status are ' + statusList.join(', ')
+                }
+            });
+        }
+        config = { filters: { "status": [status] } };
     }
 
-    docker.listContainers({ filters: { "status": [status] } })
+    docker.listContainers(config)
         .then(function(data) {
             res.json({
                 ok: true,
@@ -106,18 +112,18 @@ app.post('/containers/:id', (req, res) => {
 // TODO: Implementar run container, para generar un contenedor partir del puerto 60000
 app.post('/container/run', (req, res) => {
 
-    let config = {
+    let config = { // TODO: obtener ultimo puerto de la bd, sumarle uno, generar container, guardar puerto.
         "HostConfig": {
             "Links": ["mongodb:mongodb"],
             "PortBindings": {
                 "8080/tcp": [{
-                    "HostPort": "8080"
+                    "HostPort": "8181"
                 }]
             }
         }
     }
 
-    docker.run('jguweka', ['bash', 'catalina.sh', 'run'], process.stdout, config) // TODO: Como hacer para que no pinte la ejecucion de catalina.sh
+    docker.run('jguweka', ['catalina.sh', 'run'], process.stdout, config, {}) // TODO: Como hacer para que no pinte la ejecucion de catalina.sh
         .then(function(data) {
             var outputData = data[0];
             var containerData = data[1];
@@ -133,6 +139,7 @@ app.post('/container/run', (req, res) => {
             });
         });
     // 'catalina.sh', 'run'
+
 });
 
 module.exports = app;
