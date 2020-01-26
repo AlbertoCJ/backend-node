@@ -7,14 +7,24 @@ const request = require('request');
 const app = express();
 
 app.post('/algorithm', (req, res) => {
-    let fileName = 'weather-11-6-807.arff';
+    let fileName = req.params.fileName; // 'weather-11-6-807.arff';
+    if (!fileName) {
+        res.json({
+            ok: false,
+            err: {
+                message: 'Debes de pasar un nombre de fichero.'
+            }
+        });
+    }
     let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileName }`);
 
     if (!fs.existsSync(pathFile)) {
         res.json({
             ok: false,
-            pathFile,
-            message: 'No existe el fichero'
+            err: {
+                pathFile,
+                message: 'No existe el fichero'
+            }
         });
     }
 
@@ -33,7 +43,7 @@ app.post('/algorithm', (req, res) => {
     };
 
 
-    request.post({ url: 'http://localhost:8081/algorithm/NaiveBayes', headers: headers, formData: formData }, function(err, httpResponse, body) {
+    request.post({ url: 'http://localhost:60000/algorithm/linearRegression', headers: headers, formData: formData }, function(err, httpResponse, body) {
         if (err) {
             res.json({
                 ok: false,

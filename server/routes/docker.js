@@ -109,37 +109,71 @@ app.post('/containers/:id', (req, res) => {
     }
 });
 
-// TODO: Implementar run container, para generar un contenedor partir del puerto 60000
 app.post('/container/run', (req, res) => {
 
-    let config = { // TODO: obtener ultimo puerto de la bd, sumarle uno, generar container, guardar puerto.
-        "HostConfig": {
-            "Links": ["mongodb:mongodb"],
-            "PortBindings": {
-                "8080/tcp": [{
-                    "HostPort": "8181"
-                }]
+    let nContainers = Number(req.body.nContainers);
+    if (!nContainers) {
+        return res.status(400).json({
+            ok: false,
+            err: {
+                message: 'Number container required'
             }
-        }
+        });
+    }
+    if (nContainers > 10 || nContainers < 1) {
+        return res.status(400).json({
+            ok: false,
+            err: {
+                message: 'Number container should be between 1 and 10'
+            }
+        });
     }
 
-    docker.run('jguweka', ['catalina.sh', 'run'], process.stdout, config, {}) // TODO: Como hacer para que no pinte la ejecucion de catalina.sh
-        .then(function(data) {
-            var outputData = data[0];
-            var containerData = data[1];
+    for (let i = 0; i < nContainers; i++) {
+        let config = {
+            "HostConfig": {
+                "Links": ["mongodb:mongodb"],
+                "PortBindings": {
+                    "8080/tcp": [{
+                        "HostPort": (60000 + i).toString()
+                    }]
+                }
+            }
+        }
 
-            res.json({
-                ok: true,
-                data
-            });
-        }).catch(function(err) {
-            res.status(500).json({
-                ok: false,
-                error: err
-            });
-        });
-    // 'catalina.sh', 'run'
+        docker.run('jguweka', [], null, config, {});
+        // , (err, data, container) => {
+        //     if (err) {
+        //         res.status(500).json({
+        //             ok: false,
+        //             error: err
+        //         });
+        //     }
+        //     res.json({
+        //         ok: true,
+        //         data,
+        //         container
+        //     });
+        // });
 
+        setTimeout(function() {
+            docker.listContainers({ all: true })
+                .then(function(containers) {
+
+                    let containersValid = containers.filter(container => container.Ports[0].PublicPort >= "60000");
+
+                    res.json({
+                        ok: true,
+                        containers: containersValid
+                    });
+                }).catch(function(err) {
+                    res.status(500).json({
+                        ok: false,
+                        error: err
+                    });
+                });
+        }, 2000);
+    }
 });
 
 module.exports = app;
