@@ -9,14 +9,14 @@ app.post('/containers', (req, res) => {
 
     let status = req.body.status;
     let config = {}
-    if (status === 'all') {
+    if (status === 'all' || status === 'valid') {
         config = { all: true };
     } else {
         let statusList = ['created', 'restarting', 'running', 'removing', 'paused', 'exited', 'dead'];
         if (statusList.indexOf(status) < 0) {
             return res.status(400).json({
                 ok: false,
-                err: {
+                error: {
                     message: 'Status required, the list of status are ' + statusList.join(', ')
                 }
             });
@@ -25,10 +25,14 @@ app.post('/containers', (req, res) => {
     }
 
     docker.listContainers(config)
-        .then(function(data) {
+        .then(function(containers) {
+            let containersValid = containers;
+            if (status === 'valid') {
+                containersValid = containers.filter(container => container.Ports[0].PublicPort >= "60000");
+            }
             res.json({
                 ok: true,
-                containers: data
+                containers: containersValid
             });
         }).catch(function(err) {
             res.status(500).json({
@@ -44,7 +48,7 @@ app.post('/containers/:id', (req, res) => {
     if (!idContainer) {
         return res.status(400).json({
             ok: false,
-            err: {
+            error: {
                 message: 'Id container required'
             }
         });
@@ -115,7 +119,7 @@ app.post('/container/run', (req, res) => {
     if (!nContainers) {
         return res.status(400).json({
             ok: false,
-            err: {
+            error: {
                 message: 'Number container required'
             }
         });
@@ -123,7 +127,7 @@ app.post('/container/run', (req, res) => {
     if (nContainers > 10 || nContainers < 1) {
         return res.status(400).json({
             ok: false,
-            err: {
+            error: {
                 message: 'Number container should be between 1 and 10'
             }
         });
