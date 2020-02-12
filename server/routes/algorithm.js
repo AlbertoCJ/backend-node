@@ -1,37 +1,113 @@
 const express = require('express');
 const { verifyToken } = require('../middlewares/authentication');
-const { getListContainers } = require('../impl/algorithmImpl');
+const { getListContainers, thereAreAlgorithms, thereAreContainers, runAlgorithm } = require('../impl/algorithmImpl');
+const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
-const request = require('request');
-var Docker = require('dockerode');
-const docker = new Docker({ host: 'localhost', port: 2375 });
 
 const app = express();
 
 app.post('/algorithm', (req, res) => {
 
     // let fileName = req.params.fileName; // 'weather-11-6-807.arff';
-    // if (!fileName) {
-    //     res.status(400).json({
-    //         ok: false,
-    //         error: {
-    //             message: 'Debes de pasar un nombre de fichero.'
-    //         }
-    //     });
-    // }
-    // let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileName }`);
-    // if (!fs.existsSync(pathFile)) {
-    //     res.status(400).json({
-    //         ok: false,
-    //         error: {
-    //             pathFile,
-    //             message: 'No existe el fichero'
-    //         }
-    //     });
-    // }
+    let fileName = 'housing-1-1-336.arff';
+    if (!fileName) {
+        res.status(400).json({
+            ok: false,
+            error: {
+                message: 'Debes de pasar un nombre de fichero.'
+            }
+        });
+    }
+    let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileName }`);
+    if (!fs.existsSync(pathFile)) {
+        res.status(400).json({
+            ok: false,
+            error: {
+                pathFile,
+                message: 'No existe el fichero'
+            }
+        });
+    }
 
-    let listAlgorithm = [];
+    res.json({
+        ok: true,
+        status: 'RUNNING'
+    });
+
+    const algoritHardcode = [{ // TODO: HARDCODE
+            name: 'Linear Regression',
+            endpoint: 'linearRegression',
+            config: {
+
+            }
+        },
+        // {
+        //     name: 'Linear Regression Bagging',
+        //     endpoint: 'linearRegression/bagging',
+        //     config: {
+
+        //     }
+        // },
+        {
+            name: 'IBk',
+            endpoint: 'IBk',
+            config: {
+
+            }
+        }
+        // {
+        //     name: 'ZeroR',
+        //     endpoint: 'ZeroR',
+        //     config: {
+
+        //     }
+        // },
+        // {
+        //     name: 'M5P',
+        //     endpoint: 'M5P',
+        //     config: {
+
+        //     }
+        // },
+        // {
+        //     name: 'M5Rules',
+        //     endpoint: 'M5Rules',
+        //     config: {
+
+        //     }
+        // },
+        // {
+        //     name: 'DecisionStump',
+        //     endpoint: 'DecisionStump',
+        //     config: {
+
+        //     }
+        // },
+        // {
+        //     name: 'DecisionStump Bagging',
+        //     endpoint: 'DecisionStump/bagging',
+        //     config: {
+
+        //     }
+        // }
+    ];
+
+    const headers = { // TODO: HARDCODE
+        'Content-Type': 'multipart/form-data',
+        'accept': 'application/json' // 'text/uri-list'
+    };
+
+    // TODO: HARDCODE
+    // const formData = {
+    //     file: fs.createReadStream(pathFile),
+    // };
+    // console.log(formData);
+
+    const formData = new FormData();
+    formData.append('file', fs.createReadStream(pathFile));
+
+    let listAlgorithm = algoritHardcode; // []; // TODO: Llega por req peticion
     let listAlgorithmError = [];
 
     let containersFree = [];
@@ -54,10 +130,25 @@ app.post('/algorithm', (req, res) => {
     mainFunction = async() => {
         containersFree = await getListContainers();
 
-        res.json({
-            ok: true,
-            containersFree
-        });
+        while (thereAreAlgorithms(listAlgorithm) && thereAreContainers(containersFree)) {
+            let algorithm = listAlgorithm.shift();
+            let container = containersFree.shift();
+            console.log('espera');
+            let algorithmRunning = await runAlgorithm(algorithm, container, headers, formData);
+            console.log(algorithmRunning.title);
+            console.log('continua');
+            if (algorithmRunning.uri) {
+                containersWorking.push({ container, task: algorithmRunning })
+            } else {
+                containersWorking.push({ container, err: algorithmRunning })
+            }
+
+        }
+
+        // res.json({
+        //     ok: true,
+        //     containersWorking
+        // });
     }
 
     mainFunction();

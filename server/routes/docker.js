@@ -17,7 +17,7 @@ app.post('/containers', (req, res) => {
             return res.status(400).json({
                 ok: false,
                 error: {
-                    message: 'Status required, the list of status are ' + statusList.join(', ')
+                    message: 'Status required, the list of status are valid, ' + statusList.join(', ')
                 }
             });
         }
@@ -28,7 +28,7 @@ app.post('/containers', (req, res) => {
         .then(function(containers) {
             let containersValid = containers;
             if (status === 'valid') {
-                containersValid = containers.filter(container => container.Ports[0].PublicPort >= "60000");
+                containersValid = containersValid.filter(container => Number(container.Ports[0].PublicPort) >= 60000);
             }
             res.json({
                 ok: true,
@@ -145,7 +145,7 @@ app.post('/container/run', (req, res) => {
             }
         }
 
-        docker.run('jguweka', [], null, config, {});
+        docker.run('jguweka', [], null, config, {}).catch(function(err) {});
         // , (err, data, container) => {
         //     if (err) {
         //         res.status(500).json({
@@ -159,25 +159,33 @@ app.post('/container/run', (req, res) => {
         //         container
         //     });
         // });
-
-        setTimeout(function() {
-            docker.listContainers({ all: true })
-                .then(function(containers) {
-
-                    let containersValid = containers.filter(container => container.Ports[0].PublicPort >= "60000");
-
-                    res.json({
-                        ok: true,
-                        containers: containersValid
-                    });
-                }).catch(function(err) {
-                    res.status(500).json({
-                        ok: false,
-                        error: err
-                    });
-                });
-        }, 2000);
     }
+
+    setTimeout(function() {
+        docker.listContainers({ all: true })
+            .then(containers => {
+
+                let containersValid = containers.filter(container => Number(container.Ports[0].PublicPort) >= 60000);
+
+                // let containersValid = [];
+                // containers.forEach(container => {
+                //     console.log(Number(container.Ports[0].PublicPort));
+                //     if (Number(container.Ports[0].PublicPort) >= 60000) {
+                //         containersValid.push(container);
+                //     }
+                // });
+
+                res.json({
+                    ok: true,
+                    containers: containersValid
+                });
+            }).catch(err => {
+                res.status(500).json({
+                    ok: false,
+                    error: err
+                });
+            });
+    }, 3000);
 });
 
 module.exports = app;
