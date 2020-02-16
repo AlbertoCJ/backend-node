@@ -8,25 +8,18 @@ getListContainers = async() => { // Listado de contenedores
     return containersValid;
 }
 
-runAlgorithm = async(algorithm, container, headers, formData) => {
-    let requestConfig = {
-        headers: {
-            'accept': 'application/json',
-            'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
-        }
-    }
+runAllRequests = async(listUrls, listFormDatas, listConfigs) => {
 
-    let result = await axios.post(`http://localhost:${ container.Ports[0].PublicPort }/algorithm/${ algorithm.endpoint }`, formData, requestConfig)
-        .then(response => {
-            console.log(response.data);
-            return response.data;
-            // return response
-        })
-        .catch(err => {
-            console.log(err);
-            return err;
-        });
-    return result;
+    try {
+        let listRequest = []
+        for (let i = 0; i < listUrls.length; i++) {
+            listRequest.push(axios.post(listUrls[i], listFormDatas[i], listConfigs[i]));
+        }
+        const listPromise = await axios.all(listRequest);
+        return { ok: true, promises: listPromise };
+    } catch (err) {
+        return { ok: false, err };
+    }
 }
 
 thereAreAlgorithms = (listAlgorithm) => { // ¿Hay algoritmos?
@@ -39,7 +32,7 @@ thereAreContainers = (containersFree) => { // ¿Hay contenedores?
 
 module.exports = {
     getListContainers,
-    runAlgorithm,
+    runAllRequests,
     thereAreAlgorithms,
     thereAreContainers
 }

@@ -28,6 +28,7 @@ app.use(require('./routes/index'));
 
 
 mongoose.connect(`mongodb://localhost:27017/${ process.env.NAMEDB }`, {
+    useCreateIndex: true,
     useNewUrlParser: true,
     useUnifiedTopology: true
 }, (err, res) => {

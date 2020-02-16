@@ -1,9 +1,10 @@
 const express = require('express');
 const { verifyToken } = require('../middlewares/authentication');
-const { getListContainers, thereAreAlgorithms, thereAreContainers, runAlgorithm } = require('../impl/algorithmImpl');
+const { getListContainers, thereAreAlgorithms, thereAreContainers, runAllRequests } = require('../impl/algorithmImpl');
 const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
+// const axios = require('axios');
 
 const app = express();
 
@@ -49,13 +50,13 @@ app.post('/algorithm', (req, res) => {
 
         //     }
         // },
-        {
-            name: 'IBk',
-            endpoint: 'IBk',
-            config: {
+        // {
+        //     name: 'IBk',
+        //     endpoint: 'IBk',
+        //     config: {
 
-            }
-        }
+        //     }
+        // },
         // {
         //     name: 'ZeroR',
         //     endpoint: 'ZeroR',
@@ -63,13 +64,13 @@ app.post('/algorithm', (req, res) => {
 
         //     }
         // },
-        // {
-        //     name: 'M5P',
-        //     endpoint: 'M5P',
-        //     config: {
+        {
+            name: 'M5P',
+            endpoint: 'M5P',
+            config: {
 
-        //     }
-        // },
+            }
+        }
         // {
         //     name: 'M5Rules',
         //     endpoint: 'M5Rules',
@@ -93,57 +94,69 @@ app.post('/algorithm', (req, res) => {
         // }
     ];
 
-    const headers = { // TODO: HARDCODE
-        'Content-Type': 'multipart/form-data',
-        'accept': 'application/json' // 'text/uri-list'
-    };
-
-    // TODO: HARDCODE
-    // const formData = {
-    //     file: fs.createReadStream(pathFile),
-    // };
-    // console.log(formData);
-
-    const formData = new FormData();
-    formData.append('file', fs.createReadStream(pathFile));
-
     let listAlgorithm = algoritHardcode; // []; // TODO: Llega por req peticion
     let listAlgorithmError = [];
 
     let containersFree = [];
     let containersWorking = [];
 
-    // docker.listContainers({ all: true }) //TODO: Realizar una peticion usando await mejor que esto
-    //     .then(function(containers) {
-    //         let containersValid = containers.filter(container => container.Ports[0].PublicPort >= "60000");
-    //         containersFree = containersValid;
-    //         res.json({
-    //             ok: true,
-    //             containersFree
-    //         });
-    //     }).catch(function(err) {
-    //         res.status(400).json({
-    //             ok: false,
-    //             error: err
-    //         });
-    //     });
-    mainFunction = async() => {
-        containersFree = await getListContainers();
 
+
+    // TODO: IMPOARTANTE Si hay algoritmos crear objeto basico a guardar en mongo
+
+
+    mainFunction = async() => {
+        containersLength = await getListContainers();
+        if (containersFree.length === 0 && containersLength.length > 0) {
+            containersFree = containersLength;
+        }
+        containersLength = containersLength.length;
+
+        // TODO: IMPORTANTE Criterio de parada si no hay containers TREMINA
+
+        let listUrls = [];
+        let listFormDatas = [];
+        let listConfigs = [];
         while (thereAreAlgorithms(listAlgorithm) && thereAreContainers(containersFree)) {
             let algorithm = listAlgorithm.shift();
             let container = containersFree.shift();
-            console.log('espera');
-            let algorithmRunning = await runAlgorithm(algorithm, container, headers, formData);
-            console.log(algorithmRunning.title);
-            console.log('continua');
-            if (algorithmRunning.uri) {
-                containersWorking.push({ container, task: algorithmRunning })
-            } else {
-                containersWorking.push({ container, err: algorithmRunning })
+            let formData = new FormData();
+            formData.append('file', fs.createReadStream(pathFile));
+            let requestConfig = {
+                headers: {
+                    'accept': 'application/json',
+                    'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
+                }
             }
 
+            listUrls.push(`http://localhost:${ container.Ports[0].PublicPort }/algorithm/${ algorithm.endpoint }`);
+            listFormDatas.push(formData);
+            listConfigs.push(requestConfig);
+
+            containersWorking.push({ algorithm, container });
+
         }
+
+        let listPromise = await runAllRequests(listUrls, listFormDatas, listConfigs);
+        if (listPromise.ok) {
+
+            for (let i = 0; i < listPromise.promises.length; i++) {
+                let data = listPromise.promises[i].data;
+                console.log(data.taskID, i);
+                // TODO: IMPORTANTE agregar objeto a containersWorking
+            }
+            // listPromise.promises.forEach((promise, index) => {
+            //     console.log(promise.data.taskID, index);
+            //     // TODO: IMPORTANTE agregar objeto a containersWorking
+            // });
+        } else {
+            console.log(listPromise);
+        }
+
+        // console.log(containersWorking);
+
+
+
 
         // res.json({
         //     ok: true,
