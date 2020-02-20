@@ -8,17 +8,33 @@ getListContainers = async() => { // Listado de contenedores
     return containersValid;
 }
 
-runAllRequests = async(listUrls, listFormDatas, listConfigs) => {
+removeContainer = (container) => {
+    let containerToRemove = docker.getContainer(container.Id);
+    containerToRemove.stop() // TODO: ¿Que hacer con el resultado, un return?
+        .then(function(data) {
+            console.log(data);
+            return { ok: true };
+        }).catch(function(err) {
+            console.log(error);
+            return { ok: false };
+        });
+}
+
+runAllRequests = async(listUrls, listFormDatas, listConfigs, type = 'post') => {
+    let listRequest = []
+    for (let i = 0; i < listUrls.length; i++) {
+        if (type === 'post') {
+            listRequest.push(axios.post(listUrls[i], listFormDatas[i], listConfigs[i]));
+        } else { // get
+            listRequest.push(axios.get(listUrls[i]));
+        }
+    }
 
     try {
-        let listRequest = []
-        for (let i = 0; i < listUrls.length; i++) {
-            listRequest.push(axios.post(listUrls[i], listFormDatas[i], listConfigs[i]));
-        }
         const listPromise = await axios.all(listRequest);
         return { ok: true, promises: listPromise };
     } catch (err) {
-        return { ok: false, err };
+        return { ok: false, err, listPromise };
     }
 }
 
@@ -32,6 +48,7 @@ thereAreContainers = (containersFree) => { // ¿Hay contenedores?
 
 module.exports = {
     getListContainers,
+    removeContainer,
     runAllRequests,
     thereAreAlgorithms,
     thereAreContainers

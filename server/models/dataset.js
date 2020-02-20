@@ -7,7 +7,7 @@ let datasetSchema = new Schema({
     description: {
         type: String,
         unique: true,
-        required: [true, 'La descripcion es necesaria']
+        required: [true, 'La descripción es necesaria']
     },
     file: {
         type: String,
