@@ -38,6 +38,22 @@ runAllRequests = async(listUrls, listFormDatas, listConfigs, type = 'post') => {
     }
 }
 
+postRequest = async(url, formData, requestConfig) => {
+    return axios.post(url, formData, requestConfig).then(promise => {
+        return promise;
+    }).catch(err => {
+        return err;
+    });
+}
+
+getRequest = async(url) => {
+    return axios.get(url).then(promise => {
+        return promise;
+    }).catch(err => {
+        return err;
+    });
+}
+
 thereAreAlgorithms = (listAlgorithm) => { // ¿Hay algoritmos?
     return listAlgorithm.length > 0;
 }
@@ -50,6 +66,8 @@ module.exports = {
     getListContainers,
     removeContainer,
     runAllRequests,
+    postRequest,
+    getRequest,
     thereAreAlgorithms,
     thereAreContainers
 }
