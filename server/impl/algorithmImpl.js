@@ -3,14 +3,14 @@ const docker = new Docker({ host: 'localhost', port: 2375 });
 const axios = require('axios');
 
 getListContainers = async() => { // Listado de contenedores
-    let [containersPromise] = await Promise.all([docker.listContainers({ all: true })]);
+    let containersPromise = await docker.listContainers({ all: true });
     let containersValid = containersPromise.filter(container => Number(container.Ports[0].PublicPort) >= 60000);
     return containersValid;
 }
 
-removeContainer = (container) => {
-    let containerToRemove = docker.getContainer(container.Id);
-    containerToRemove.stop() // TODO: ¿Que hacer con el resultado, un return?
+removeContainer = async(container) => {
+    let containerToRemove = await docker.getContainer(container.Id);
+    return containerToRemove.remove({ force: true }) // TODO: ¿Que hacer con el resultado, un return?
         .then(function(data) {
             console.log(data);
             return { ok: true };
