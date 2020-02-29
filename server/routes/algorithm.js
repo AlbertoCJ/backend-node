@@ -5,7 +5,7 @@ const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
 // const axios = require('axios');
-const Job = require('../models/job');
+const Job = require('../models/appDB/job');
 
 const app = express();
 

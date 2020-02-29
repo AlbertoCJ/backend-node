@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const _ = require('underscore');
-const User = require('../models/user');
+const User = require('../models/appDB/user');
 const { verifyToken } = require('../middlewares/authentication');
 
 const app = express();

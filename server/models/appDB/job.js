@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
+const appDB = require('../../connectionsDB').appDB;
 
 let Schema = mongoose.Schema;
 
@@ -23,4 +24,4 @@ let jobSchema = new Schema({
 
 jobSchema.plugin(uniqueValidator, { message: '{PATH} debe ser único' });
 
-module.exports = mongoose.model('Job', jobSchema);
+module.exports = appDB.model('Job', jobSchema);
