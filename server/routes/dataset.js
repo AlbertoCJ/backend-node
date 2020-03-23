@@ -10,6 +10,37 @@ const app = express();
 // default options
 app.use(fileUpload());
 
+app.get('/dataset', (req, res) => {
+
+    let page = req.query.page || 1;
+    let limit = req.query.limit || 1;
+
+    if (limit > 20) limit = 20
+    if (limit < 1) limit = 1
+
+    const options = {
+        page,
+        limit
+    };
+
+    Dataset.paginate({}, options, (err, datasetsDB) => {
+
+        if (err) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        }
+
+        res.json({
+            ok: true,
+            datasets: datasetsDB
+        });
+
+    });
+
+})
+
 app.get('/dataset/:id', (req, res) => {
     let id = req.params.id;
 
