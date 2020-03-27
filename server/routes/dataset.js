@@ -2,9 +2,9 @@ const express = require('express');
 const fileUpload = require('express-fileupload');
 const Dataset = require('../models/appDB/dataset');
 // const { verifyToken } = require('../middlewares/authentication');
-// const _ = require('underscore');
-// const fs = require('fs');
-// const path = require('path');
+const _ = require('underscore');
+const fs = require('fs');
+const path = require('path');
 const app = express();
 
 // default options
