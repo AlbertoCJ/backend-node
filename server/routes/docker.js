@@ -135,8 +135,11 @@ app.post('/container/run', (req, res) => {
 
     for (let i = 0; i < nContainers; i++) {
         let config = {
+            "Env": [
+                `MONGODB_URI_WEKA_JAVA=${ process.env.MONGODB_URI_WEKA_JAVA }`
+            ],
             "HostConfig": {
-                "Links": ["mongodb:mongodb"],
+                // "Links": ["mongodb:mongodb"],
                 "PortBindings": {
                     "8080/tcp": [{
                         "HostPort": (60000 + i).toString()
@@ -164,8 +167,7 @@ app.post('/container/run', (req, res) => {
     setTimeout(function() {
         docker.listContainers({ all: true })
             .then(containers => {
-
-                let containersValid = containers.filter(container => Number(container.Ports[0].PublicPort) >= 60000);
+                let containersValid = containers.filter(container => (container.Ports.length > 0 && Number(container.Ports[0].PublicPort) >= 60000));
 
                 // let containersValid = [];
                 // containers.forEach(container => {

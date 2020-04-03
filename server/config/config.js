@@ -4,6 +4,7 @@ process.env.PORT = process.env.PORT || 3000;
 // uri´s DB
 process.env.MONGODB_URI_APP = process.env.MONGODB_URI_APP;
 process.env.MONGODB_URI_WEKA_NODE = process.env.MONGODB_URI_WEKA_NODE;
+process.env.MONGODB_URI_WEKA_JAVA = process.env.MONGODB_URI_WEKA_JAVA;
 
 // Path files dataset
 process.env.PATH_FILES_DATASET = 'uploads/filesDatasets';
