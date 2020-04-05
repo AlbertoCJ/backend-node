@@ -9,7 +9,7 @@ const Job = require('../models/appDB/job');
 
 const app = express();
 
-app.post('/algorithm', (req, res) => {
+app.post('/algorithm', verifyToken, (req, res) => {
 
     // let fileName = req.params.fileName; // 'weather-11-6-807.arff';
     let fileName = 'housing.arff'; // 'housing-1-1-336.arff';

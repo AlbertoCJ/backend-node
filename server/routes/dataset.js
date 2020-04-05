@@ -1,7 +1,7 @@
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const Dataset = require('../models/appDB/dataset');
-// const { verifyToken } = require('../middlewares/authentication');
+const { verifyToken } = require('../middlewares/authentication');
 const _ = require('underscore');
 const fs = require('fs');
 const path = require('path');
@@ -10,7 +10,7 @@ const app = express();
 // default options
 app.use(fileUpload());
 
-app.get('/dataset', (req, res) => {
+app.get('/dataset', verifyToken, (req, res) => {
 
     let page = req.query.page || 1;
     let limit = req.query.limit || 1;
@@ -42,7 +42,7 @@ app.get('/dataset', (req, res) => {
 
 })
 
-app.get('/dataset/:id', (req, res) => {
+app.get('/dataset/:id', verifyToken, (req, res) => {
     let id = req.params.id;
 
     Dataset.findById(id, (err, datasetDB) => {
@@ -63,7 +63,7 @@ app.get('/dataset/:id', (req, res) => {
 
 })
 
-app.post('/dataset', (req, res) => {
+app.post('/dataset', verifyToken, (req, res) => {
 
     if (!req.files || Object.keys(req.files).length === 0) {
         return res.status(400).json({
@@ -137,7 +137,7 @@ app.post('/dataset', (req, res) => {
     });
 })
 
-app.put('/dataset/:id', (req, res) => {
+app.put('/dataset/:id', verifyToken, (req, res) => {
 
     let id = req.params.id;
     let body = _.pick(req.body, 'description'); // Undercore library
@@ -160,7 +160,7 @@ app.put('/dataset/:id', (req, res) => {
 
 })
 
-app.delete('/dataset/:id', (req, res) => {
+app.delete('/dataset/:id', verifyToken, (req, res) => {
     let id = req.params.id;
 
     Dataset.findByIdAndRemove(id, (err, datasetRemoved) => {

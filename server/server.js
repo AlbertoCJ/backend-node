@@ -3,6 +3,7 @@ const cors = require('cors');
 const express = require('express');
 // const mongoose = require('mongoose');
 // const path = require('path');
+const { jobRemoveContainers } = require('./cron/cronJobs');
 
 const app = express();
 
@@ -23,33 +24,10 @@ app.use(require('./routes/index'));
 // public folder
 // app.use(express.static(path.resolve(__dirname, '../public')));
 
-
-
-
-// mongoose.connect(`mongodb://localhost:27017/${ process.env.NAMEDB }`, {
-// mongoose.appDB = mongoose.createConnection(process.env.MONGODB_URI_APP, {
-//     useCreateIndex: true,
-//     useNewUrlParser: true,
-//     useFindAndModify: false,
-//     useUnifiedTopology: true
-// }, (err, res) => {
-//     if (err) throw err;
-
-//     console.log('appBD ONLINE');
-// });
-
-// mongoose.wekaDB = mongoose.createConnection(process.env.MONGODB_URI_WEKA_NODE, {
-//     useCreateIndex: true,
-//     useNewUrlParser: true,
-//     useFindAndModify: false,
-//     useUnifiedTopology: true
-// }, (err, res) => {
-//     if (err) throw err;
-
-//     console.log('wekaBD ONLINE');
-// });
 require('./connectionsDB');
 
 app.listen(process.env.PORT, () => {
     console.log('Listen on port 3000');
 });
+
+jobRemoveContainers.start();

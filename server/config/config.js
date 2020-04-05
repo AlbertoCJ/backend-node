@@ -16,3 +16,7 @@ process.env.EXPIRED_TOKEN = 60 * 60 * 24 * 30;
 
 // Seed authentication
 process.env.SEED = process.env.SEED || 'secret-dev'
+
+// Time cronJobs
+process.env.TIME_TO_RUN_CRONJOB = process.env.TIME_TO_RUN_CRONJOB | 6; // In minutes
+process.env.TIME_TO_REMOVE_CONTAINERS = process.env.TIME_TO_REMOVE_CONTAINERS | 5; // In minutes
