@@ -8,20 +8,28 @@ let jobSchema = new Schema({
     name: {
         type: String,
         unique: true,
-        required: [true, 'La descripcion es necesaria']
+        required: [true, 'The job name must be exist.']
     },
     description: {
         type: String
     },
-    date_creation: {
+    dateCreation: {
         type: Date,
         default: Date.now
     },
-    jobItems: {
-        type: Array
+    hasStatus: {
+        type: String,
+        default: 'RUNNING' // 'ERROR', 'COMPLETED' y 'PARTIAL'
+    },
+    error: {
+        type: Object,
+        default: null
+    },
+    dataAlgorithms: {
+        type: Object
     }
 });
 
-jobSchema.plugin(uniqueValidator, { message: '{PATH} debe ser único' });
+jobSchema.plugin(uniqueValidator, { name: '{PATH} must be unique' });
 
 module.exports = appDB.model('Job', jobSchema);

@@ -1,6 +1,22 @@
 const express = require('express');
 const { verifyToken } = require('../middlewares/authentication');
-const { getListContainers, thereAreAlgorithms, thereAreContainers, runAllRequests } = require('../impl/algorithmImpl');
+const {
+    createArrayAlgorithms,
+    isAnyAlgorithms,
+    postRequest,
+    getRequest,
+    thereAreAlgorithms,
+    thereAreContainers,
+    getContainersFree,
+    releaseContainer,
+    liberateContainers,
+    updateContainerWorking,
+    updateContainerWithJobId,
+    updateDataAlgorithms,
+    waitRamdonSeconds
+} = require('../impl/algorithmImpl');
+
+
 const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
@@ -11,13 +27,14 @@ const app = express();
 
 app.post('/algorithm', verifyToken, (req, res) => {
 
-    // let fileName = req.params.fileName; // 'weather-11-6-807.arff';
-    let fileName = 'housing.arff'; // 'housing-1-1-336.arff';
+    let user_id = req.user._id;
+    let fileName = req.body.fileName; // 'weather-11-6-807.arff';
+    // let fileName = 'housing.arff'; // 'housing-1-1-336.arff';
     if (!fileName) {
         res.status(400).json({
             ok: false,
             error: {
-                message: 'You must pass a filename.'
+                message: 'You must pass a fileName.'
             }
         });
     }
@@ -32,116 +49,181 @@ app.post('/algorithm', verifyToken, (req, res) => {
         });
     }
 
-    const algoritHardcode = [{ // TODO: HARDCODE
-            name: 'Linear Regression',
-            endpoint: 'linearRegression',
-            config: {
-
+    let jobName = req.body.jobName;
+    // let jobName = 'jobName';
+    if (!jobName) {
+        res.status(400).json({
+            ok: false,
+            error: {
+                message: 'You must pass a jobName.'
             }
-        },
-        {
-            name: 'Linear Regression Bagging',
-            endpoint: 'linearRegression/bagging',
-            config: {
+        });
+    }
+    let jobDescription = req.body.jobDescription || '';
 
+    // const algoritHardcode = [{ // TODO: HARDCODE
+    //         name: 'Linear Regression',
+    //         endpoint: 'linearRegression',
+    //         config: {
+
+    //         }
+    //     },
+    //     {
+    //         name: 'Linear Regression Bagging',
+    //         endpoint: 'linearRegression/bagging',
+    //         config: {
+
+    //         }
+    //     },
+    //     {
+    //         name: 'IBk',
+    //         endpoint: 'IBk',
+    //         config: {
+
+    //         }
+    //     },
+    //     {
+    //         name: 'ZeroR',
+    //         endpoint: 'ZeroR',
+    //         config: {
+
+    //         }
+    //     },
+    //     {
+    //         name: 'M5P',
+    //         endpoint: 'M5P',
+    //         config: {
+
+    //         }
+    //     },
+    //     {
+    //         name: 'M5Rules',
+    //         endpoint: 'M5Rules',
+    //         config: {
+
+    //         }
+    //     },
+    //     {
+    //         name: 'DecisionStump',
+    //         endpoint: 'DecisionStump',
+    //         config: {
+
+    //         }
+    //     },
+    //     {
+    //         name: 'DecisionStump Bagging',
+    //         endpoint: 'DecisionStump/bagging',
+    //         config: {
+
+    //         }
+    //     }
+    // ];
+
+    // let listAlgorithm = algoritHardcode; // []; // TODO: Llega por req peticion
+
+    let algorithms = JSON.parse(req.body.algorithms);
+    if (!algorithms) {
+        res.status(400).json({
+            ok: false,
+            error: {
+                message: 'You must pass a list algorithms.'
             }
-        },
-        {
-            name: 'IBk',
-            endpoint: 'IBk',
-            config: {
-
+        });
+    }
+    // let provisionalAlgo = { linearRegression: { algorithm: { id: 1, name: "Linear Regression", endpoint: "linearRegression", config: { attributeSelectionMethod: 2, eliminateColinearAttributes: "0", validation: "Hold-Out", validationNum: "5" } } }, linearRegressionBagging: { algorithm: null }, IBk: { algorithm: null }, ZeroR: { algorithm: null }, M5P: { algorithm: null }, M5Rules: { algorithm: null }, DecisionStump: { algorithm: null }, DecisionStumpBagging: { algorithm: null } };
+    // algorithms = provisionalAlgo; // JSON.parse(algorithms);algorithms
+    if (!isAnyAlgorithms(algorithms)) {
+        res.status(400).json({
+            ok: false,
+            error: {
+                message: 'You must pass one or more algorithms.'
             }
-        },
-        {
-            name: 'ZeroR',
-            endpoint: 'ZeroR',
-            config: {
-
-            }
-        },
-        {
-            name: 'M5P',
-            endpoint: 'M5P',
-            config: {
-
-            }
-        },
-        {
-            name: 'M5Rules',
-            endpoint: 'M5Rules',
-            config: {
-
-            }
-        },
-        {
-            name: 'DecisionStump',
-            endpoint: 'DecisionStump',
-            config: {
-
-            }
-        },
-        {
-            name: 'DecisionStump Bagging',
-            endpoint: 'DecisionStump/bagging',
-            config: {
-
-            }
-        }
-    ];
-
-    let listAlgorithm = algoritHardcode; // []; // TODO: Llega por req peticion
-
-    let containersFree = [];
-    let containersWorking = [];
+        });
+    }
 
     let jobCreated = null;
 
-    // TODO: Datos hardcode, se obtendran del body
-    let job = new Job({
-        name: 'Nombre de prueba',
-        description: 'descripción de prueba' // body.description
-    });
-    job.save((err, jobDB) => {
-        if (err) {
-            return res.status(500).json({
-                ok: false,
-                err
-            });
-        }
-        console.log('Guardado job');
-        // Almaceno el job creado
-        jobCreated = jobDB;
+    // TODO: Obtener contenedores por la petición, si no viene vacia actualizar el Job_id de los contenedores
+    let containers = req.body.containers || [];
 
-        res.json({
-            ok: true,
-            status: 'RUNNING Provisional (Se pasará al job)',
-            job: jobDB
-        });
+    let job = new Job({
+        name: jobName,
+        description: jobDescription,
+        dataAlgorithms: algorithms
+    });
+    // job.save((err, jobDB) => {
+    //     if (err) {
+    //         return res.status(500).json({
+    //             ok: false,
+    //             err
+    //         });
+    //     }
+    //     console.log('Guardado job');
+    //     // Almaceno el job creado
+    //     jobCreated = jobDB;
+
+    //     let containers = updateContainerWithJobId(containers, jobDB._id);
+
+    //     res.json({
+    //         ok: true,
+    //         job: jobDB,
+    //         containers
+    //     });
+    // });
+
+    // res.json({
+    //     ok: true,
+    //     job,
+    //     pathFile
+    // });
+
+    let listAlgorithm = createArrayAlgorithms(algorithms);
+    // let containersFree = [];
+    let containersWorking = [];
+
+    res.json({
+        ok: true,
+        job,
+        listAlgorithm
     });
 
     let running = true;
-    let firstLoad = true;
+    // let firstLoad = true;
     mainFunction = async() => {
         while (running) {
-            containersLength = await getListContainers();
-            if (firstLoad) {
-                containersFree = containersLength;
-                firstLoad = false;
-            }
-            containersLength = containersLength.length;
 
-            // Criterio de parada, si no hay containers TREMINA
-            if (containersLength === 0) {
-                running = false; // Stop
+            // Check number of algorithms and number of containers
+            const numAlgorithms = listAlgorithm.length;
+            const numContainers = containers.length;
+            if (numAlgorithms > numContainers) { // Get container inactives
+                let numContainersGet = numAlgorithms - numContainers;
+                let containersFree = getContainersFree(numContainersGet, user_id, jobCreated._id);
+                containersFree.forEach(containerFree => {
+                    containers.push(containerFree);
+                });
             }
 
-            while (thereAreAlgorithms(listAlgorithm) && thereAreContainers(containersFree)) {
+            if (numAlgorithms < numContainers) { // Liberate containers
+                let numContainersRemove = numContainers - numAlgorithms;
+                let containersLiberate = [];
+                for (let i = 0; i < numContainersRemove; i++) {
+                    containersLiberate.push(containers.shift());
+                }
+                // Liberate containers
+                liberateContainers(containersLiberate);
+            }
+
+            while (thereAreContainers(containers)) {
                 let algorithm = listAlgorithm.shift();
-                let container = containersFree.shift();
+                let container = containers.shift();
+
+                // TODO: actualizar contenedor: Working = true, Date_work_end = date now
+                container = updateContainerWorking(container);
+
+                // TODO: Metodo que recibe el algoritmo y devuelve formData
                 let formData = new FormData();
                 formData.append('file', fs.createReadStream(pathFile));
-                // TODO: Agregar parametros del algoritmo
+
                 let requestConfig = {
                     headers: {
                         'accept': 'application/json',
@@ -178,52 +260,68 @@ app.post('/algorithm', verifyToken, (req, res) => {
                             containerWork.task = taskUpdated;
 
                             // Comprobaciones
-                            if (taskUpdated.hasStatus === 'ERROR') {
-                                // console.log('ko:  ', jobCreated._id);
+                            if (taskUpdated.hasStatus === 'RUNNING') {
 
                                 await Job.findById(jobCreated._id, (err, jobDB) => {
 
                                     if (err) {
                                         console.log(err);
                                     } else {
-                                        let jobItems = [];
-                                        jobItems = jobDB.jobItems;
-                                        jobItems.push({ algorithm: containerWork.algorithm, task: taskUpdated, model: null });
-                                        Job.findByIdAndUpdate(jobCreated._id, { jobItems }, { new: true }, (err, jobDB) => {
-                                            console.log(jobDB);
+                                        let dataAlgorithms = jobDB.dataAlgorithms;
+                                        dataAlgorithms = updateDataAlgorithms(containerWork.algorithm, dataAlgorithms, taskUpdated, null);
+                                        Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms }, { new: true }, (err, jobDB) => {
+                                            jobCreated = jobDB;
+                                            // console.log(jobDB); // TODO: Eliminar
+                                        });
+                                    }
+                                });
+                            }
+                            if (taskUpdated.hasStatus === 'ERROR') {
+
+                                await Job.findById(jobCreated._id, (err, jobDB) => {
+
+                                    if (err) {
+                                        console.log(err);
+                                    } else {
+                                        let dataAlgorithms = jobDB.dataAlgorithms;
+                                        dataAlgorithms = updateDataAlgorithms(containerWork.algorithm, dataAlgorithms, taskUpdated, null);
+                                        Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms, hasStatus: 'PARTIAL' }, { new: true }, (err, jobDB) => {
+                                            jobCreated = jobDB;
+                                            // console.log(jobDB); // TODO: Eliminar
+                                            // TODO: Eliminar task and model de wekaDB
                                         });
                                     }
                                 });
 
-                                // Libero contenedor
-                                containersFree.push(containerWork.container);
+                                // Release container
+                                let containerUpdated = releaseContainer(containerWork.container);
+                                containers.push(containerUpdated);
                                 containerWork.task = null;
                             }
                             if (task.hasStatus === 'COMPLETED' && task.percentageCompleted === 100) {
-                                // let promiseModel = await runAllRequests([task.resultURI], null, null, 'get');
                                 let promiseModel = await getRequest(task.resultURI);
                                 if (promiseModel.status) {
                                     if (promiseModel.status === 200 || promiseModel.status === 201 || promiseModel.status === 202) {
                                         model = promiseModel.data;
-                                        // console.log('ok:  ', jobCreated._id);
-                                        // console.log(containerWork, ' AHORO');
 
                                         await Job.findById(jobCreated._id, (err, jobDB) => {
                                             // TODO: Controlar error
                                             if (err) {
                                                 console.log(err);
                                             } else {
-                                                let jobItems = [];
-                                                jobItems = jobDB.jobItems;
-                                                jobItems.push({ algorithm: containerWork.algorithm, task: taskUpdated, model });
-                                                Job.findByIdAndUpdate(jobCreated._id, { jobItems }, { new: true }, (err, jobDB) => {
-                                                    console.log(jobDB);
+                                                let dataAlgorithms = jobDB.dataAlgorithms;
+                                                dataAlgorithms = updateDataAlgorithms(containerWork.algorithm, dataAlgorithms, taskUpdated, model);
+                                                Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms }, { new: true }, (err, jobDB) => {
+                                                    jobCreated = jobDB;
+                                                    console.log(jobDB); // TODO: Eliminar
+                                                    // TODO: Eliminar task and model de wekaDB
                                                 });
                                             }
                                         });
 
-                                        // Libero contenedor
-                                        containersFree.push(containerWork.container);
+                                        // Release container
+                                        let containerUpdated = releaseContainer(containerWork.container);
+                                        containers.push(containerUpdated);
                                         containerWork.task = null;
                                     } else {
                                         // TODO: ¿Que hacer con este error? Guardar model como viene
@@ -250,20 +348,24 @@ app.post('/algorithm', verifyToken, (req, res) => {
             // Elimino los containersWorking libres
             containersWorking = containersWorking.filter(contWork => contWork.task !== null);
 
-            if (containersWorking.length === 0) {
-                // Elimino contenedores libres sin usar
-                while (containersFree.length > 0) {
-                    let removed = await removeContainer(containersFree[0]);
-                    console.log(removed);
-                    containersFree.shift();
-                }
-                running = false; // Stop
-                console.log('FIN');
-            }
         }
+
+        if (containersWorking.length === 0) {
+            if (jobCreated.hasStatus === 'RUNNING') {
+                await Job.findByIdAndUpdate(jobCreated._id, { hasStatus: 'COMPLETED' }, { new: true }, (err, jobDB) => {
+                    jobCreated = jobDB;
+                });
+            }
+            running = false;
+            // return false;
+        }
+        // else { return true; };
+
+        // Wait a seconds
+        waitRamdonSeconds();
     }
 
-    mainFunction();
+    // mainFunction();
 
 });
 
