@@ -9,7 +9,7 @@ const {
     thereAreContainers,
     getContainersFree,
     releaseContainer,
-    liberateContainers,
+    liberateContainer,
     updateContainerWorking,
     updateContainerWithJobId,
     updateDataAlgorithms,
@@ -143,53 +143,42 @@ app.post('/algorithm', verifyToken, (req, res) => {
 
     let jobCreated = null;
 
-    // TODO: Obtener contenedores por la petición, si no viene vacia actualizar el Job_id de los contenedores
-    let containers = req.body.containers || [];
+    let containers = JSON.parse(req.body.containers) || [];
 
     let job = new Job({
         name: jobName,
         description: jobDescription,
         dataAlgorithms: algorithms
     });
-    // job.save((err, jobDB) => {
-    //     if (err) {
-    //         return res.status(500).json({
-    //             ok: false,
-    //             err
-    //         });
-    //     }
-    //     console.log('Guardado job');
-    //     // Almaceno el job creado
-    //     jobCreated = jobDB;
-
-    //     let containers = updateContainerWithJobId(containers, jobDB._id);
-
-    //     res.json({
-    //         ok: true,
-    //         job: jobDB,
-    //         containers
-    //     });
-    // });
-
-    // res.json({
-    //     ok: true,
-    //     job,
-    //     pathFile
-    // });
 
     let listAlgorithm = createArrayAlgorithms(algorithms);
     // let containersFree = [];
     let containersWorking = [];
 
-    res.json({
-        ok: true,
-        job,
-        listAlgorithm
+    job.save(async(err, jobDB) => {
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                err
+            });
+        }
+        console.log('Guardado job');
+        // Almaceno el job creado
+        jobCreated = jobDB;
+
+        containers = await updateContainerWithJobId(containers, jobDB._id);
+
+        res.json({
+            ok: true,
+            job: jobDB,
+            containers
+        });
+
+        mainFunction();
     });
 
-    let running = true;
-    // let firstLoad = true;
     mainFunction = async() => {
+        let running = true;
         while (running) {
 
             // Check number of algorithms and number of containers
@@ -197,7 +186,7 @@ app.post('/algorithm', verifyToken, (req, res) => {
             const numContainers = containers.length;
             if (numAlgorithms > numContainers) { // Get container inactives
                 let numContainersGet = numAlgorithms - numContainers;
-                let containersFree = getContainersFree(numContainersGet, user_id, jobCreated._id);
+                let containersFree = await getContainersFree(numContainersGet, user_id, jobCreated._id);
                 containersFree.forEach(containerFree => {
                     containers.push(containerFree);
                 });
@@ -205,12 +194,11 @@ app.post('/algorithm', verifyToken, (req, res) => {
 
             if (numAlgorithms < numContainers) { // Liberate containers
                 let numContainersRemove = numContainers - numAlgorithms;
-                let containersLiberate = [];
                 for (let i = 0; i < numContainersRemove; i++) {
-                    containersLiberate.push(containers.shift());
+                    let container = containers.shift();
+                    // Liberate containers
+                    await liberateContainer(container);
                 }
-                // Liberate containers
-                liberateContainers(containersLiberate);
             }
 
             while (thereAreContainers(containers)) {
@@ -218,7 +206,7 @@ app.post('/algorithm', verifyToken, (req, res) => {
                 let container = containers.shift();
 
                 // TODO: actualizar contenedor: Working = true, Date_work_end = date now
-                container = updateContainerWorking(container);
+                container = await updateContainerWorking(container);
 
                 // TODO: Metodo que recibe el algoritmo y devuelve formData
                 let formData = new FormData();
@@ -231,7 +219,7 @@ app.post('/algorithm', verifyToken, (req, res) => {
                     }
                 }
 
-                let promise = await postRequest(`http://localhost:${ container.Ports[0].PublicPort }/algorithm/${ algorithm.endpoint }`, formData, requestConfig);
+                let promise = await postRequest(`http://localhost:${ container.Port.PublicPort }/algorithm/${ algorithm.endpoint }`, formData, requestConfig);
                 if (promise.status) {
                     if (promise.status === 200 || promise.status === 201 || promise.status === 202) {
                         containersWorking.push({ algorithm, container, task: promise.data });
@@ -242,12 +230,14 @@ app.post('/algorithm', verifyToken, (req, res) => {
 
                 } else {
                     // TODO: ¿Que hacer con este error?
-                    console.log(promise);
+                    console.error(promise);
                     // containersWorking.push({ algorithm, container, error: promise });
                 }
+
+                // console.log('containersWorking', containersWorking);
             }
 
-            // Recorre containersWorking
+            // // Recorre containersWorking
             for (let i = 0; i < containersWorking.length; i++) {
                 let containerWork = containersWorking[i];
                 let task = containerWork.task;
@@ -262,14 +252,14 @@ app.post('/algorithm', verifyToken, (req, res) => {
                             // Comprobaciones
                             if (taskUpdated.hasStatus === 'RUNNING') {
 
-                                await Job.findById(jobCreated._id, (err, jobDB) => {
+                                await Job.findById(jobCreated._id, async(err, jobDB) => {
 
                                     if (err) {
-                                        console.log(err);
+                                        console.error(err);
                                     } else {
                                         let dataAlgorithms = jobDB.dataAlgorithms;
                                         dataAlgorithms = updateDataAlgorithms(containerWork.algorithm, dataAlgorithms, taskUpdated, null);
-                                        Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms }, { new: true }, (err, jobDB) => {
+                                        await Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms }, { new: true }, (err, jobDB) => {
                                             jobCreated = jobDB;
                                             // console.log(jobDB); // TODO: Eliminar
                                         });
@@ -278,14 +268,14 @@ app.post('/algorithm', verifyToken, (req, res) => {
                             }
                             if (taskUpdated.hasStatus === 'ERROR') {
 
-                                await Job.findById(jobCreated._id, (err, jobDB) => {
+                                await Job.findById(jobCreated._id, async(err, jobDB) => {
 
                                     if (err) {
-                                        console.log(err);
+                                        console.error(err);
                                     } else {
                                         let dataAlgorithms = jobDB.dataAlgorithms;
                                         dataAlgorithms = updateDataAlgorithms(containerWork.algorithm, dataAlgorithms, taskUpdated, null);
-                                        Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms, hasStatus: 'PARTIAL' }, { new: true }, (err, jobDB) => {
+                                        await Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms, hasStatus: 'PARTIAL' }, { new: true }, (err, jobDB) => {
                                             jobCreated = jobDB;
                                             // console.log(jobDB); // TODO: Eliminar
                                             // TODO: Eliminar task and model de wekaDB
@@ -294,7 +284,7 @@ app.post('/algorithm', verifyToken, (req, res) => {
                                 });
 
                                 // Release container
-                                let containerUpdated = releaseContainer(containerWork.container);
+                                let containerUpdated = await releaseContainer(containerWork.container);
                                 containers.push(containerUpdated);
                                 containerWork.task = null;
                             }
@@ -304,23 +294,23 @@ app.post('/algorithm', verifyToken, (req, res) => {
                                     if (promiseModel.status === 200 || promiseModel.status === 201 || promiseModel.status === 202) {
                                         model = promiseModel.data;
 
-                                        await Job.findById(jobCreated._id, (err, jobDB) => {
+                                        await Job.findById(jobCreated._id, async(err, jobDB) => {
                                             // TODO: Controlar error
                                             if (err) {
-                                                console.log(err);
+                                                console.error(err);
                                             } else {
                                                 let dataAlgorithms = jobDB.dataAlgorithms;
                                                 dataAlgorithms = updateDataAlgorithms(containerWork.algorithm, dataAlgorithms, taskUpdated, model);
-                                                Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms }, { new: true }, (err, jobDB) => {
+                                                await Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms }, { new: true }, (err, jobDB) => {
                                                     jobCreated = jobDB;
-                                                    console.log(jobDB); // TODO: Eliminar
+                                                    // console.log(jobDB); // TODO: Eliminar
                                                     // TODO: Eliminar task and model de wekaDB
                                                 });
                                             }
                                         });
 
                                         // Release container
-                                        let containerUpdated = releaseContainer(containerWork.container);
+                                        let containerUpdated = await releaseContainer(containerWork.container);
                                         containers.push(containerUpdated);
                                         containerWork.task = null;
                                     } else {
@@ -345,27 +335,34 @@ app.post('/algorithm', verifyToken, (req, res) => {
                 }
             }
 
-            // Elimino los containersWorking libres
+            // // Elimino los containersWorking libres
             containersWorking = containersWorking.filter(contWork => contWork.task !== null);
 
-        }
+            // console.log('fecha antes', new Date().toString());
+            // // Wait a seconds
+            // waitRamdonSeconds();
+            // console.log('fecha despues', new Date().toString());
+            // console.log('fin en teoria');
 
-        if (containersWorking.length === 0) {
-            if (jobCreated.hasStatus === 'RUNNING') {
-                await Job.findByIdAndUpdate(jobCreated._id, { hasStatus: 'COMPLETED' }, { new: true }, (err, jobDB) => {
-                    jobCreated = jobDB;
-                });
+            if (containersWorking.length === 0) {
+                if (jobCreated.hasStatus === 'RUNNING') {
+                    await Job.findByIdAndUpdate(jobCreated._id, { hasStatus: 'COMPLETED' }, { new: true }, (err, jobDB) => {
+                        jobCreated = jobDB;
+                    });
+                }
+
+                while (containers.length > 0) {
+                    let container = containers.shift();
+                    // Liberate containers
+                    await liberateContainer(container);
+                }
+                running = false;
             }
-            running = false;
-            // return false;
         }
-        // else { return true; };
-
-        // Wait a seconds
-        waitRamdonSeconds();
+        console.log('End');
     }
 
-    // mainFunction();
+
 
 });
 

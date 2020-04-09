@@ -14,8 +14,8 @@ let localContainerSchema = new Schema({
     Image: {
         type: String
     },
-    Ports: {
-        type: Array
+    Port: {
+        type: Object
     },
     State: {
         type: String

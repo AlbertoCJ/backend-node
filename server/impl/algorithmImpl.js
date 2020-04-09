@@ -1,5 +1,5 @@
-const Docker = require('dockerode');
-const docker = new Docker({ host: 'localhost', port: 2375 });
+// const Docker = require('dockerode');
+// const docker = new Docker({ host: 'localhost', port: 2375 });
 const axios = require('axios');
 const LocalContainer = require('../models/wekaDB/localContainer');
 
@@ -13,34 +13,6 @@ createArrayAlgorithms = (objectAlgorithms) => {
     if (objectAlgorithms.M5Rules.algorithm) { arrayAlgorithms.push(objectAlgorithms.M5Rules.algorithm); }
     if (objectAlgorithms.DecisionStump.algorithm) { arrayAlgorithms.push(objectAlgorithms.DecisionStump.algorithm); }
     if (objectAlgorithms.DecisionStumpBagging.algorithm) { arrayAlgorithms.push(objectAlgorithms.DecisionStumpBagging.algorithm); }
-    // switch (key) {
-    //     case 1:
-    //         arrayAlgorithms.push(objectAlgorithms.linearRegression.algorithm);
-    //         break;
-    //     case 2:
-    //         arrayAlgorithms.push(objectAlgorithms.linearRegressionBagging.algorithm);
-    //         break;
-    //     case 3:
-    //         arrayAlgorithms.push(objectAlgorithms.IBk.algorithm);
-    //         break;
-    //     case 4:
-    //         arrayAlgorithms.push(objectAlgorithms.ZeroR.algorithm);
-    //         break;
-    //     case 5:
-    //         arrayAlgorithms.push(objectAlgorithms.M5P.algorithm);
-    //         break;
-    //     case 6:
-    //         arrayAlgorithms.push(objectAlgorithms.M5Rules.algorithm);
-    //         break;
-    //     case 7:
-    //         arrayAlgorithms.push(objectAlgorithms.DecisionStump.algorithm);
-    //         break;
-    //     case 8:
-    //         arrayAlgorithms.push(objectAlgorithms.DecisionStumpBagging.algorithm);
-    //         break;
-    //     default:
-    //         break;
-    // }
     return arrayAlgorithms;
 }
 
@@ -125,8 +97,12 @@ getContainersFree = async(numContainersGet, userId, jobId) => {
             for (let i = 0; i < numContainersGet && i < listContainers.length; i++) {
                 let container = listContainers[i];
                 await LocalContainer.findByIdAndUpdate(container._id, { User_id: userId, Job_id: jobId }, { new: true }, (err, containerUpdated) => {
-                    console.log(containerUpdated); // TODO: Eliminar
-                    containersUpdated.push(containerUpdated);
+                    if (err) {
+                        console.error(err);
+                    }
+                    if (containerUpdated) {
+                        containersUpdated.push(containerUpdated);
+                    }
                 });
             }
 
@@ -136,38 +112,53 @@ getContainersFree = async(numContainersGet, userId, jobId) => {
 }
 
 releaseContainer = async(container) => {
-    let containerReleased;
-    await LocalContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date() }, { new: true }, (err, containerUpdated) => {
-        // console.log(containerUpdated); // TODO: Eliminar
-        containerReleased = containerUpdated;
-    });
+    let containerReleased = await LocalContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date() }, { new: true })
+        .then(containerUpdated => {
+            return containerUpdated;
+        })
+        .catch(err => {
+            console.error(err);
+        });
     return containerReleased;
 }
 
-liberateContainers = async(containers) => {
-    containers.forEach(async container => {
-        await LocalContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date(), User_id: '', Job_id: '' }, { new: true }, (err, containerUpdated) => {
-            // console.log(containerUpdated); // TODO: Eliminar
+liberateContainer = async(container) => {
+    await LocalContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date(), User_id: '', Job_id: '' }, { new: true })
+        .then(containerUpdated => {
+            return containerUpdated;
+        })
+        .catch(err => {
+            console.error(err);
         });
-    });
 }
 
 updateContainerWorking = async(container) => {
-    let containerWorking;
-    await LocalContainer.findByIdAndUpdate(container._id, { Working: true, Date_work_end: new Date() }, { new: true }, (err, containerUpdated) => {
-        // console.log(containerUpdated); // TODO: Eliminar
-        containerWorking = containerUpdated;
-    });
+    let containerWorking = await LocalContainer.findByIdAndUpdate(container._id, { Working: true, Date_work_end: new Date() }, { new: true })
+        .then(containerUpdated => {
+            return containerUpdated;
+        })
+        .catch(err => {
+            console.error(err);
+        });
     return containerWorking;
 }
 
 updateContainerWithJobId = async(containers, jobId) => {
-    containers.forEach(async container => {
-        let Job_id = jobId;
+    let Job_id = jobId;
+    let auxContainers = containers;
+    let updateContainers = [];
+    for (let i = 0; i < auxContainers.length; i++) {
+        let container = auxContainers[i];
         await LocalContainer.findByIdAndUpdate(container._id, { Job_id }, { new: true }, (err, containerUpdated) => {
-            // console.log(containerUpdated); // TODO: Eliminar
+            if (err) {
+                console.error(err);
+            }
+            if (containerUpdated) {
+                updateContainers.push(containerUpdated);
+            }
         });
-    });
+    }
+    return updateContainers;
 }
 
 updateDataAlgorithms = (algorithm, dataAlgorithms, taskUpdated, model) => {
@@ -211,11 +202,9 @@ updateDataAlgorithms = (algorithm, dataAlgorithms, taskUpdated, model) => {
 
 waitRamdonSeconds = async() => {
     let time = Math.floor(Math.random() * 8) + 1; // aleatorio entre 1 y 8
-    console.log(new Date.toString());
     await setInterval(() => {
         return true;
     }, `${ time }000`);
-    console.log(new Date.toString());
 }
 
 
@@ -231,7 +220,7 @@ module.exports = {
     thereAreContainers,
     getContainersFree,
     releaseContainer,
-    liberateContainers,
+    liberateContainer,
     updateContainerWorking,
     updateContainerWithJobId,
     updateDataAlgorithms,

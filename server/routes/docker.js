@@ -2,7 +2,7 @@ const express = require('express');
 const { verifyToken } = require('../middlewares/authentication');
 const { getCountContainers, getLastPort } = require('../impl/dockerImpl');
 const LocalContainer = require('../models/wekaDB/localContainer');
-var Docker = require('dockerode');
+const Docker = require('dockerode');
 
 const app = express();
 const docker = new Docker({ host: 'localhost', port: 2375 });
@@ -179,40 +179,67 @@ app.post('/container/run', verifyToken, (req, res) => {
         let nextPort = await getLastPort();
 
         for (let i = 0; i < nContainers; i++) {
-            let config = {
-                "Env": [
-                    `MONGODB_URI_WEKA_JAVA=${ process.env.MONGODB_URI_WEKA_JAVA }`
-                ],
-                "HostConfig": {
-                    // "Links": ["mongodb:mongodb"],
-                    "PortBindings": {
-                        "8080/tcp": [{
-                            "HostPort": (nextPort + i).toString()
-                        }]
-                    }
+            // let config = {
+            //     "Env": [
+            //         `MONGODB_URI_WEKA_JAVA=${ process.env.MONGODB_URI_WEKA_JAVA }`
+            //     ],
+            //     "HostConfig": {
+            //         // "Links": ["mongodb:mongodb"],
+            //         "PortBindings": {
+            //             "8080/tcp": [{
+            //                 "HostPort": (nextPort + i).toString()
+            //             }]
+            //         }
+            //     }
+            // }
+
+            let Env = [`MONGODB_URI_WEKA_JAVA=${ process.env.MONGODB_URI_WEKA_JAVA }`];
+            let HostConfig = {
+                // "Links": ["mongodb:mongodb"],
+                "PortBindings": {
+                    "8080/tcp": [{
+                        "HostPort": (nextPort + i).toString()
+                    }]
                 }
             }
 
-            docker.run('jguweka', [], null, config, {}).catch(function(err) {});
-            // , (err, data, container) => {
-            //     if (err) {
-            //         res.status(500).json({
-            //             ok: false,
-            //             error: err
-            //         });
-            //     }
-            //     res.json({
-            //         ok: true,
-            //         data,
-            //         container
+            // docker.createContainer({ Image: 'jguweka', Env, HostConfig }, async function(err, container) {
+            //     await container.start(function(err, container) {
+            //         docker.getContainer(container.id, function(err, conta) { console.log(conta); }); // .then(conta => { console.log(conta); });
             //     });
+
             // });
+
+            // let Env = [`MONGODB_URI_WEKA_JAVA=${ process.env.MONGODB_URI_WEKA_JAVA }`];
+            // let HostConfig = {
+            //         // "Links": ["mongodb:mongodb"],
+            //         "PortBindings": {
+            //             "8080/tcp": [{
+            //                 "HostPort": (nextPort + i).toString()
+            //             }]
+            //         }
+            //     }
+
+            // await docker.createContainer({ Image: 'jguweka', Env, HostConfig }, (err, container) => {
+            //     if (!err) {
+            //         container.start();
+            //         console.log('started');
+            //     }
+            // });
+
+            await docker.createContainer({ Image: 'jguweka', Env, HostConfig })
+                .then(container => { container.start(); })
+                .catch(err => {})
+
+            // docker.run('jguweka', [], undefined, config, {}).catch(err => {});
+
         }
 
         setTimeout(function() {
             docker.listContainers({ all: true })
                 .then(containersDocker => {
-                    let containersValid = containersDocker.filter(container => (container.Ports.length > 0 && Number(container.Ports[0].PublicPort) >= nextPort));
+
+                    let containersValid = containersDocker.filter(container => (container.Ports && Number(container.Ports[0].PublicPort) >= nextPort));
 
                     let containers = [];
                     containersValid.forEach(containerValid => {
@@ -222,21 +249,31 @@ app.post('/container/run', verifyToken, (req, res) => {
                             names.push(name);
                         });
 
-                        let ports = [];
-                        containerValid.Ports.forEach(port => {
-                            ports.push({
-                                "IP": port.IP,
-                                "PrivatePort": port.PrivatePort,
-                                "PublicPort": port.PublicPort,
-                                "Type": port.Type
-                            });
-                        });
+                        // let ports = [];
+                        // containerValid.Ports.forEach(port => {
+                        //     ports.push({
+                        //         "IP": port.IP,
+                        //         "PrivatePort": port.PrivatePort,
+                        //         "PublicPort": port.PublicPort,
+                        //         "Type": port.Type
+                        //     });
+                        // });
+
+                        let firstPort = containerValid.Ports[0];
+
+                        let port = {
+                            IP: firstPort.IP,
+                            PrivatePort: firstPort.PrivatePort,
+                            PublicPort: firstPort.PublicPort,
+                            Type: firstPort.Type
+                        }
+
 
                         let container = new LocalContainer({
                             Id: containerValid.Id,
                             Names: names,
                             Image: containerValid.Image,
-                            Ports: ports,
+                            Port: port,
                             State: containerValid.State,
                             User_id: req.user._id
                         });
@@ -258,20 +295,6 @@ app.post('/container/run', verifyToken, (req, res) => {
                                 });
                             }
                         });
-                    //  => {
-
-                    //     if (error) {
-                    //         res.status(500).json({
-                    //             ok: false,
-                    //             error: error
-                    //         });
-                    //     }
-
-                    //     res.json({
-                    //         ok: true,
-                    //         containers: insertedContainers.ops
-                    //     });
-                    // });
 
                 }).catch(err => {
                     res.status(500).json({
@@ -279,7 +302,7 @@ app.post('/container/run', verifyToken, (req, res) => {
                         error: err
                     });
                 });
-        }, 3000 + ((nContainers - 1) * 1000));
+        }, 5000 + ((nContainers - 1) * 1000));
     }
     init();
 });

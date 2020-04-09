@@ -1,4 +1,6 @@
 const LocalContainer = require('../models/wekaDB/localContainer');
+const Docker = require('dockerode');
+const docker = new Docker({ host: 'localhost', port: 2375 });
 
 getCountContainers = async() => {
     let count = await LocalContainer.countDocuments({}, (err, count) => {
@@ -11,24 +13,23 @@ getCountContainers = async() => {
 }
 
 getLastPort = async() => {
-    let portReturn = -1;
-    let count = await LocalContainer.find({}, (err, containers) => {
-        if (err) {
-            portReturn = -1;
-        }
-        let port = 59999;
-        containers.forEach(container => {
-            if (container.Ports) {
-                container.Ports.forEach(continerPort => {
-                    if (continerPort.PublicPort > port) {
-                        port = continerPort.PublicPort;
-                    }
-                });
+    let port = await LocalContainer
+        .find()
+        .sort({ "Port": -1 })
+        .limit(1)
+        .then((container) => {
+            if (container.length > 0) {
+                let port = container[0].Port.PublicPort;
+                return port + 1;
+            } else {
+                return 60000;
             }
+        })
+        .catch(err => {
+            console.error(err);
         });
-        portReturn = port + 1;
-    });
-    return portReturn;
+
+    return port;
 }
 
 module.exports = {
