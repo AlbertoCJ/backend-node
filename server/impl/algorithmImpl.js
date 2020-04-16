@@ -1,7 +1,12 @@
 // const Docker = require('dockerode');
 // const docker = new Docker({ host: 'localhost', port: 2375 });
+const mongoose = require('mongoose');
+const delay = require('delay');
 const axios = require('axios');
+const FormData = require('form-data');
 const LocalContainer = require('../models/wekaDB/localContainer');
+const Task = require('../models/wekaDB/task');
+const Model = require('../models/wekaDB/model');
 
 createArrayAlgorithms = (objectAlgorithms) => {
     let arrayAlgorithms = [];
@@ -65,6 +70,20 @@ isAnyAlgorithms = (objectAlgorithms) => {
 //         return { ok: false, err, listPromise };
 //     }
 // }
+
+generateFormData = (config) => {
+    let formData = new FormData();
+
+    for (var key in config) {
+        if (config.hasOwnProperty(key)) {
+            // Mostrando en pantalla la clave junto a su valor
+            // console.log("La clave es " + key + " y el valor es " + config[key]);
+            // alert("La clave es " + clave + " y el valor es " + json[clave]);
+            formData.append(key, config[key]);
+        }
+    }
+    return formData;
+}
 
 postRequest = async(url, formData, requestConfig) => {
     return axios.post(url, formData, requestConfig).then(promise => {
@@ -200,11 +219,39 @@ updateDataAlgorithms = (algorithm, dataAlgorithms, taskUpdated, model) => {
     return nweDataAlgorithms;
 }
 
+removeTask = async(taskId) => { // TODO: Eliminar si no vale
+    console.log(taskId);
+    await Task.findByIdAndDelete(mongoose.Types.ObjectId(taskId), (err, taskRemoved) => {
+
+        if (err) {
+            console.error(err);
+        }
+
+        if (taskRemoved) {
+            // TODO: que devolver?
+            console.log(taskRemoved);
+        }
+    });
+}
+
+removeModel = async(modelId) => { // TODO: Eliminar si no vale
+    console.log(modelId);
+    await Model.findByIdAndDelete(mongoose.Types.ObjectId(modelId), (err, modelRemoved) => {
+
+        if (err) {
+            console.error(err);
+        }
+
+        if (modelRemoved) {
+            // TODO: que devolver?
+            console.log(modelRemoved);
+        }
+    });
+}
+
 waitRamdonSeconds = async() => {
-    let time = Math.floor(Math.random() * 8) + 1; // aleatorio entre 1 y 8
-    await setInterval(() => {
-        return true;
-    }, `${ time }000`);
+    let time = Math.floor(Math.random() * 10) + 4; // aleatorio entre 4 y 10
+    await delay(Number(`${ time }000`));
 }
 
 
@@ -214,6 +261,7 @@ module.exports = {
     // getListContainers,
     // removeContainer,
     // runAllRequests,
+    generateFormData,
     postRequest,
     getRequest,
     thereAreAlgorithms,
@@ -224,5 +272,7 @@ module.exports = {
     updateContainerWorking,
     updateContainerWithJobId,
     updateDataAlgorithms,
+    removeTask,
+    removeModel,
     waitRamdonSeconds
 }

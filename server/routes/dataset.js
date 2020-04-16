@@ -27,7 +27,7 @@ app.get('/dataset', verifyToken, (req, res) => {
     Dataset.paginate({ description: { $regex: descriptionSearch, $options: 'ix' } }, options, (err, datasetsDB) => {
 
         if (err) {
-            return res.status(400).json({
+            return res.status(500).json({
                 ok: false,
                 err
             });
@@ -40,7 +40,7 @@ app.get('/dataset', verifyToken, (req, res) => {
 
     });
 
-})
+});
 
 app.get('/dataset/:id', verifyToken, (req, res) => {
     let id = req.params.id;
@@ -48,7 +48,7 @@ app.get('/dataset/:id', verifyToken, (req, res) => {
     Dataset.findById(id, (err, datasetDB) => {
 
         if (err) {
-            return res.status(400).json({
+            return res.status(500).json({
                 ok: false,
                 err
             });
@@ -61,7 +61,7 @@ app.get('/dataset/:id', verifyToken, (req, res) => {
     });
 
 
-})
+});
 
 app.post('/dataset', verifyToken, (req, res) => {
 
@@ -135,7 +135,7 @@ app.post('/dataset', verifyToken, (req, res) => {
             });
         });
     });
-})
+});
 
 app.put('/dataset/:id', verifyToken, (req, res) => {
 
@@ -145,7 +145,7 @@ app.put('/dataset/:id', verifyToken, (req, res) => {
     Dataset.findByIdAndUpdate(id, body, { new: true }, (err, datasetDB) => {
 
         if (err) {
-            return res.status(400).json({
+            return res.status(500).json({
                 ok: false,
                 err
             });
@@ -158,7 +158,7 @@ app.put('/dataset/:id', verifyToken, (req, res) => {
     });
 
 
-})
+});
 
 app.delete('/dataset/:id', verifyToken, (req, res) => {
     let id = req.params.id;
@@ -166,17 +166,17 @@ app.delete('/dataset/:id', verifyToken, (req, res) => {
     Dataset.findByIdAndRemove(id, (err, datasetRemoved) => {
 
         if (err) {
-            return res.status(400).json({
+            return res.status(500).json({
                 ok: false,
                 err
             });
         }
 
         if (datasetRemoved === null) {
-            return res.status(400).json({
+            return res.status(500).json({
                 ok: false,
                 err: {
-                    message: 'Dataset no encontrado'
+                    message: 'Dataset not found.'
                 }
             });
         }
@@ -197,6 +197,6 @@ app.delete('/dataset/:id', verifyToken, (req, res) => {
             file_deleted: fileDeleted
         });
     });
-})
+});
 
 module.exports = app;

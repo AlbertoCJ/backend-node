@@ -6,7 +6,7 @@ let verifyToken = (req, res, next) => {
 
     jwt.verify(token, process.env.SEED, (err, decoded) => {
         if (err) {
-            return res.status(401).json({
+            return res.status(401).json({ // TODO: Avisar token caducado y redireccionar al login
                 ok: false,
                 err
             });

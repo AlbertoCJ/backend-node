@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
-const uniqueValidator = require('mongoose-unique-validator');
+// const uniqueValidator = require('mongoose-unique-validator');
+const mongoosePaginate = require('mongoose-paginate-v2');
 const appDB = require('../../connectionsDB').appDB;
 
 let Schema = mongoose.Schema;
@@ -7,7 +8,7 @@ let Schema = mongoose.Schema;
 let jobSchema = new Schema({
     name: {
         type: String,
-        unique: true,
+        // unique: true,
         required: [true, 'The job name must be exist.']
     },
     description: {
@@ -30,6 +31,7 @@ let jobSchema = new Schema({
     }
 });
 
-jobSchema.plugin(uniqueValidator, { name: '{PATH} must be unique' });
+// jobSchema.plugin(uniqueValidator, { name: '{PATH} must be unique' });
+jobSchema.plugin(mongoosePaginate);
 
 module.exports = appDB.model('Job', jobSchema);

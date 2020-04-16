@@ -3,6 +3,7 @@ const { verifyToken } = require('../middlewares/authentication');
 const {
     createArrayAlgorithms,
     isAnyAlgorithms,
+    generateFormData,
     postRequest,
     getRequest,
     thereAreAlgorithms,
@@ -13,10 +14,12 @@ const {
     updateContainerWorking,
     updateContainerWithJobId,
     updateDataAlgorithms,
+    removeTask,
+    removeModel,
     waitRamdonSeconds
 } = require('../impl/algorithmImpl');
 
-
+const delay = require('delay');
 const FormData = require('form-data');
 const fs = require('fs');
 const path = require('path');
@@ -208,8 +211,7 @@ app.post('/algorithm', verifyToken, (req, res) => {
                 // TODO: actualizar contenedor: Working = true, Date_work_end = date now
                 container = await updateContainerWorking(container);
 
-                // TODO: Metodo que recibe el algoritmo y devuelve formData
-                let formData = new FormData();
+                let formData = generateFormData(algorithm.config); // new FormData();
                 formData.append('file', fs.createReadStream(pathFile));
 
                 let requestConfig = {
@@ -237,7 +239,7 @@ app.post('/algorithm', verifyToken, (req, res) => {
                 // console.log('containersWorking', containersWorking);
             }
 
-            // // Recorre containersWorking
+            // Recorre containersWorking
             for (let i = 0; i < containersWorking.length; i++) {
                 let containerWork = containersWorking[i];
                 let task = containerWork.task;
@@ -275,10 +277,11 @@ app.post('/algorithm', verifyToken, (req, res) => {
                                     } else {
                                         let dataAlgorithms = jobDB.dataAlgorithms;
                                         dataAlgorithms = updateDataAlgorithms(containerWork.algorithm, dataAlgorithms, taskUpdated, null);
-                                        await Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms, hasStatus: 'PARTIAL' }, { new: true }, (err, jobDB) => {
+                                        await Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms, hasStatus: 'PARTIAL' }, { new: true }, async(err, jobDB) => {
                                             jobCreated = jobDB;
                                             // console.log(jobDB); // TODO: Eliminar
                                             // TODO: Eliminar task and model de wekaDB
+                                            // await removeTask(task.taskID);
                                         });
                                     }
                                 });
@@ -301,10 +304,13 @@ app.post('/algorithm', verifyToken, (req, res) => {
                                             } else {
                                                 let dataAlgorithms = jobDB.dataAlgorithms;
                                                 dataAlgorithms = updateDataAlgorithms(containerWork.algorithm, dataAlgorithms, taskUpdated, model);
-                                                await Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms }, { new: true }, (err, jobDB) => {
+                                                await Job.findByIdAndUpdate(jobCreated._id, { dataAlgorithms }, { new: true }, async(err, jobDB) => {
                                                     jobCreated = jobDB;
                                                     // console.log(jobDB); // TODO: Eliminar
                                                     // TODO: Eliminar task and model de wekaDB
+                                                    // await removeTask(task.taskID);
+                                                    // let arrayModel = task.resultURI.split('/');
+                                                    // await removeModel(arrayModel[arrayModel.length - 1]);
                                                 });
                                             }
                                         });
@@ -335,16 +341,11 @@ app.post('/algorithm', verifyToken, (req, res) => {
                 }
             }
 
-            // // Elimino los containersWorking libres
+            // Remove containersWorking free
             containersWorking = containersWorking.filter(contWork => contWork.task !== null);
 
-            // console.log('fecha antes', new Date().toString());
-            // // Wait a seconds
-            // waitRamdonSeconds();
-            // console.log('fecha despues', new Date().toString());
-            // console.log('fin en teoria');
-
-            if (containersWorking.length === 0) {
+            // Finish Job
+            if (containersWorking.length === 0 && listAlgorithm.length === 0) {
                 if (jobCreated.hasStatus === 'RUNNING') {
                     await Job.findByIdAndUpdate(jobCreated._id, { hasStatus: 'COMPLETED' }, { new: true }, (err, jobDB) => {
                         jobCreated = jobDB;
@@ -358,6 +359,8 @@ app.post('/algorithm', verifyToken, (req, res) => {
                 }
                 running = false;
             }
+            // Wait a seconds
+            await waitRamdonSeconds();
         }
         console.log('End');
     }
