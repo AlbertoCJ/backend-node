@@ -151,7 +151,8 @@ app.post('/algorithm', verifyToken, (req, res) => {
     let job = new Job({
         name: jobName,
         description: jobDescription,
-        dataAlgorithms: algorithms
+        dataAlgorithms: algorithms,
+        user: req.user._id
     });
 
     let listAlgorithm = createArrayAlgorithms(algorithms);

@@ -21,10 +21,11 @@ app.get('/dataset', verifyToken, (req, res) => {
 
     const options = {
         page,
-        limit
+        limit,
+        sort: { date_creation: 'desc' }
     };
 
-    Dataset.paginate({ description: { $regex: descriptionSearch, $options: 'ix' } }, options, (err, datasetsDB) => {
+    Dataset.paginate({ description: { $regex: descriptionSearch, $options: 'ix' }, user: req.user._id }, options, (err, datasetsDB) => {
 
         if (err) {
             return res.status(500).json({
@@ -99,7 +100,8 @@ app.post('/dataset', verifyToken, (req, res) => {
 
     let dataset = new Dataset({
         description: body.description,
-        file: ''
+        file: '',
+        user: req.user._id
     });
 
     let date = new Date();

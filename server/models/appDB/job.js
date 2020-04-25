@@ -28,7 +28,8 @@ let jobSchema = new Schema({
     },
     dataAlgorithms: {
         type: Object
-    }
+    },
+    user: { type: Schema.Types.ObjectId, ref: 'User' }
 });
 
 // jobSchema.plugin(uniqueValidator, { name: '{PATH} must be unique' });

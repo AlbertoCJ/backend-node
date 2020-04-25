@@ -2,7 +2,7 @@ const express = require('express');
 // const fileUpload = require('express-fileupload');
 const Job = require('../models/appDB/job');
 const { verifyToken } = require('../middlewares/authentication');
-// const _ = require('underscore');
+const _ = require('underscore');
 // const fs = require('fs');
 // const path = require('path');
 const app = express();
@@ -19,9 +19,11 @@ app.get('/job', verifyToken, (req, res) => {
 
     const options = {
         page,
-        limit
+        limit,
+        sort: { dateCreation: 'desc' }
     };
 
+    // , user: req.user._id
     Job.paginate({ name: { $regex: nameSearch, $options: 'ix' }, description: { $regex: descriptionSearch, $options: 'ix' } }, options, (err, jobsDB) => {
 
         if (err) {
@@ -41,6 +43,7 @@ app.get('/job', verifyToken, (req, res) => {
 });
 
 app.get('/job/:id', verifyToken, (req, res) => {
+
     let id = req.params.id;
 
     Job.findById(id, (err, jobDB) => {
@@ -135,28 +138,26 @@ app.get('/job/:id', verifyToken, (req, res) => {
 //     });
 // });
 
-// app.put('/job/:id', verifyToken, (req, res) => {
+app.put('/job/:id', verifyToken, (req, res) => {
 
-//     let id = req.params.id;
-//     let body = _.pick(req.body, 'description'); // Undercore library
+    let id = req.params.id;
+    let body = _.pick(req.body, 'description'); // Undercore library
 
-//     Dataset.findByIdAndUpdate(id, body, { new: true }, (err, datasetDB) => {
+    Job.findByIdAndUpdate(id, body, { new: true }, (err, jobDB) => {
 
-//         if (err) {
-//             return res.status(500).json({
-//                 ok: false,
-//                 err
-//             });
-//         }
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                err
+            });
+        }
 
-//         res.json({
-//             ok: true,
-//             dataset: datasetDB
-//         });
-//     });
-
-
-// });
+        res.json({
+            ok: true,
+            job: jobDB
+        });
+    });
+});
 
 app.delete('/job/:id', verifyToken, (req, res) => {
     let id = req.params.id;

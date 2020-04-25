@@ -29,7 +29,8 @@ let datasetSchema = new Schema({
     },
     size: {
         type: String
-    }
+    },
+    user: { type: Schema.Types.ObjectId, ref: 'User' }
 });
 
 datasetSchema.plugin(uniqueValidator, { message: '{PATH} debe ser único' });
