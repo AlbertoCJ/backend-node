@@ -8,7 +8,7 @@ const LocalContainer = require('../models/wekaDB/localContainer');
 const Task = require('../models/wekaDB/task');
 const Model = require('../models/wekaDB/model');
 
-createArrayAlgorithms = (objectAlgorithms) => {
+createArrayAlgorithms = (objectAlgorithms) => { // PASADO
     let arrayAlgorithms = [];
     if (objectAlgorithms.linearRegression.algorithm) { arrayAlgorithms.push(objectAlgorithms.linearRegression.algorithm); }
     if (objectAlgorithms.linearRegressionBagging.algorithm) { arrayAlgorithms.push(objectAlgorithms.linearRegressionBagging.algorithm); }
@@ -21,7 +21,7 @@ createArrayAlgorithms = (objectAlgorithms) => {
     return arrayAlgorithms;
 }
 
-isAnyAlgorithms = (objectAlgorithms) => {
+isAnyAlgorithms = (objectAlgorithms) => { // TODO: se usaria al generar el job PASADO
     if (objectAlgorithms.linearRegression.algorithm ||
         objectAlgorithms.linearRegressionBagging.algorithm ||
         objectAlgorithms.IBk.algorithm ||
@@ -71,21 +71,18 @@ isAnyAlgorithms = (objectAlgorithms) => {
 //     }
 // }
 
-generateFormData = (config) => {
+generateFormData = (config) => { // PASADO
     let formData = new FormData();
 
     for (var key in config) {
         if (config.hasOwnProperty(key)) {
-            // Mostrando en pantalla la clave junto a su valor
-            // console.log("La clave es " + key + " y el valor es " + config[key]);
-            // alert("La clave es " + clave + " y el valor es " + json[clave]);
             formData.append(key, config[key]);
         }
     }
     return formData;
 }
 
-postRequest = async(url, formData, requestConfig) => {
+postRequest = async(url, formData, requestConfig) => { // PASADO
     return axios.post(url, formData, requestConfig).then(promise => {
         return promise;
     }).catch(err => {
@@ -93,7 +90,7 @@ postRequest = async(url, formData, requestConfig) => {
     });
 }
 
-getRequest = async(url) => {
+getRequest = async(url) => { // PASADO
     return axios.get(url).then(promise => {
         return promise;
     }).catch(err => {
@@ -109,7 +106,7 @@ thereAreContainers = (containersFree) => { // ¿Hay contenedores?
     return containersFree.length > 0;
 }
 
-getContainersFree = async(numContainersGet, userId, jobId) => {
+getContainersFree = async(numContainersGet, userId, jobId) => { // PASADO
     let containersUpdated = [];
     await LocalContainer.find({ "User_id": "", "Job_id": "", "Working": false }, async(err, listContainers) => {
         if (listContainers) {
@@ -130,7 +127,7 @@ getContainersFree = async(numContainersGet, userId, jobId) => {
     return containersUpdated;
 }
 
-releaseContainer = async(container) => {
+releaseContainer = async(container) => { // PASADO
     let containerReleased = await LocalContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date() }, { new: true })
         .then(containerUpdated => {
             return containerUpdated;
@@ -141,7 +138,7 @@ releaseContainer = async(container) => {
     return containerReleased;
 }
 
-liberateContainer = async(container) => {
+liberateContainer = async(container) => { // PASADO
     await LocalContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date(), User_id: '', Job_id: '' }, { new: true })
         .then(containerUpdated => {
             return containerUpdated;
@@ -151,7 +148,7 @@ liberateContainer = async(container) => {
         });
 }
 
-updateContainerWorking = async(container) => {
+updateContainerWorking = async(container) => { // PASADO
     let containerWorking = await LocalContainer.findByIdAndUpdate(container._id, { Working: true, Date_work_end: new Date() }, { new: true })
         .then(containerUpdated => {
             return containerUpdated;
@@ -162,7 +159,7 @@ updateContainerWorking = async(container) => {
     return containerWorking;
 }
 
-updateContainerWithJobId = async(containers, jobId) => {
+updateContainerWithJobId = async(containers, jobId) => { // TODO: se usaria al generar el job PASADO
     let Job_id = jobId;
     let auxContainers = containers;
     let updateContainers = [];
@@ -180,7 +177,7 @@ updateContainerWithJobId = async(containers, jobId) => {
     return updateContainers;
 }
 
-updateDataAlgorithms = (algorithm, dataAlgorithms, taskUpdated, model) => {
+updateDataAlgorithms = (algorithm, dataAlgorithms, taskUpdated, model) => { // PASADO
     let nweDataAlgorithms = dataAlgorithms;
     switch (algorithm.id) {
         case 1:

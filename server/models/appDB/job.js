@@ -20,7 +20,7 @@ let jobSchema = new Schema({
     },
     hasStatus: {
         type: String,
-        default: 'RUNNING' // 'ERROR', 'COMPLETED' y 'PARTIAL'
+        default: 'RUNNING' // 'ERROR', 'COMPLETED', 'PARTIAL' y 'PARTIAL_COMPLETED'
     },
     error: {
         type: Object,
@@ -29,7 +29,13 @@ let jobSchema = new Schema({
     dataAlgorithms: {
         type: Object
     },
-    user: { type: Schema.Types.ObjectId, ref: 'User' }
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    fileName: {
+        type: String
+    }
 });
 
 // jobSchema.plugin(uniqueValidator, { name: '{PATH} must be unique' });

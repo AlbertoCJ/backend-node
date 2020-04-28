@@ -3,9 +3,16 @@ const express = require('express');
 const Job = require('../models/appDB/job');
 const { verifyToken } = require('../middlewares/authentication');
 const _ = require('underscore');
-// const fs = require('fs');
-// const path = require('path');
+const fs = require('fs');
+const path = require('path');
 const app = express();
+const {
+    isAnyAlgorithms,
+    updateContainerWithJobId
+} = require('../impl/jobImpl');
+const {
+    mainManagerJobLauncher
+} = require('../impl/jobLauncher');
 
 app.get('/job', verifyToken, (req, res) => {
 
@@ -23,8 +30,7 @@ app.get('/job', verifyToken, (req, res) => {
         sort: { dateCreation: 'desc' }
     };
 
-    // , user: req.user._id
-    Job.paginate({ name: { $regex: nameSearch, $options: 'ix' }, description: { $regex: descriptionSearch, $options: 'ix' } }, options, (err, jobsDB) => {
+    Job.paginate({ name: { $regex: nameSearch, $options: 'ix' }, description: { $regex: descriptionSearch, $options: 'ix' }, user: req.user._id }, options, (err, jobsDB) => {
 
         if (err) {
             return res.status(500).json({
@@ -64,79 +70,99 @@ app.get('/job/:id', verifyToken, (req, res) => {
 
 });
 
-// app.post('/job', verifyToken, (req, res) => {
+app.post('/job', verifyToken, (req, res) => {
 
-//     if (!req.files || Object.keys(req.files).length === 0) {
-//         return res.status(400).json({
-//             ok: false,
-//             err: {
-//                 message: 'No files were uploaded.'
-//             }
-//         });
-//     }
+    let user_id = req.user._id;
+    let fileName = req.body.fileName;
+    if (!fileName) {
+        res.status(400).json({
+            ok: false,
+            error: {
+                message: 'You must pass a fileName.'
+            }
+        });
+    }
+    let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileName }`);
+    if (!fs.existsSync(pathFile)) {
+        res.status(400).json({
+            ok: false,
+            error: {
+                pathFile,
+                message: 'File does not exist.'
+            }
+        });
+    }
 
-//     let file = req.files.file;
-//     let fileNameSplit = file.name.split('.');
-//     let name = '';
-//     for (let i = 0; i < fileNameSplit.length - 1; i++) {
-//         name += fileNameSplit[i];
-//     }
-//     let extension = fileNameSplit[fileNameSplit.length - 1];
-//     let size = file.size;
+    let jobName = req.body.jobName;
+    if (!jobName) {
+        res.status(400).json({
+            ok: false,
+            error: {
+                message: 'You must pass a jobName.'
+            }
+        });
+    }
+    let jobDescription = req.body.jobDescription || '';
 
-//     let extensionsAllowed = process.env.EXTENSION_ALLOWED;
+    let algorithms = JSON.parse(req.body.algorithms);
+    if (!algorithms) {
+        res.status(400).json({
+            ok: false,
+            error: {
+                message: 'You must pass a list algorithms.'
+            }
+        });
+    }
 
-//     if (extensionsAllowed.indexOf(extension) < 0) {
-//         return res.status(400).json({
-//             ok: false,
-//             err: {
-//                 message: 'Extensions allowed are ' + extensionsAllowed.join(', '),
-//                 ext: extension
-//             }
-//         });
-//     }
+    if (!isAnyAlgorithms(algorithms)) {
+        res.status(400).json({
+            ok: false,
+            error: {
+                message: 'You must pass one or more algorithms.'
+            }
+        });
+    }
 
-//     let body = req.body;
+    // let jobCreated = null;
 
-//     let dataset = new Dataset({
-//         description: body.description,
-//         file: ''
-//     });
+    let containers = JSON.parse(req.body.containers) || [];
 
-//     let date = new Date();
-//     let fileNameCustom = `${ fileNameSplit[0] }-${ date.getMonth()}-${ date.getDay()}-${ date.getMilliseconds() }.${ extension }`;
+    let job = new Job({
+        name: jobName,
+        description: jobDescription,
+        dataAlgorithms: algorithms,
+        user: user_id,
+        fileName
+    });
 
-//     file.mv(`${ process.env.PATH_FILES_DATASET }/${ fileNameCustom }`, (err) => {
-//         if (err)
-//             return res.status(500).json({
-//                 ok: false,
-//                 err
-//             });
+    // let listAlgorithm = createArrayAlgorithms(algorithms);
+    // // let containersFree = [];
+    // let containersWorking = [];
 
-//         dataset.file = fileNameCustom;
-//         dataset.extension = extensionsAllowed;
-//         dataset.date_creation = date;
-//         dataset.name = name;
-//         dataset.full_name = file.name;
-//         dataset.size = size;
+    job.save(async(err, jobDB) => {
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                err
+            });
+        }
+        console.log('Guardado job');
+        // Almaceno el job creado
+        // jobCreated = jobDB;
 
-//         dataset.save((err, datasetDB) => {
-//             if (err) {
-//                 return res.status(400).json({
-//                     ok: false,
-//                     err
-//                 });
-//             }
+        containers = await updateContainerWithJobId(containers, jobDB._id);
 
-//             res.json({
-//                 ok: true,
-//                 dataset: datasetDB,
-//                 file_name: fileNameCustom,
-//                 message: `File ${ fileNameCustom } uploaded!`
-//             });
-//         });
-//     });
-// });
+        res.json({
+            ok: true,
+            job: jobDB,
+            containers
+        });
+
+        // mainManagerJobLauncher();
+    });
+    // TODO : Aqui se generara el jobs, mientras prueba algoritmo.
+    // mainManagerJobLauncher();
+});
 
 app.put('/job/:id', verifyToken, (req, res) => {
 

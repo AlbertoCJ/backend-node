@@ -4,7 +4,12 @@ const Docker = require('dockerode');
 const docker = new Docker({ host: 'localhost', port: 2375 });
 const LocalContainer = require('../models/wekaDB/localContainer');
 const wekaDB = require('../connectionsDB').wekaDB;
+const {
+    mainManagerJobLauncher
+} = require('../impl/jobLauncher');
 
+// `0 */${process.env.TIME_TO_RUN_CRONJOB} * * * *` // Cada x minutos
+// `*/30 * * * * *`
 const jobRemoveContainers = new CronJob(`0 */${process.env.TIME_TO_RUN_CRONJOB} * * * *`, () => {
     LocalContainer.find({ "User_id": "", "Job_id": "", "Working": false }, (err, listContainers) => {
         if (err) {}
@@ -60,6 +65,8 @@ const jobRemoveContainers = new CronJob(`0 */${process.env.TIME_TO_RUN_CRONJOB} 
         //     });
         // }
     });
+
+    // mainManagerJobLauncher();
 });
 
 module.exports = {

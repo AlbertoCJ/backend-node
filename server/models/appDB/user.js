@@ -4,6 +4,10 @@ const appDB = require('../../connectionsDB').appDB;
 
 let Schema = mongoose.Schema;
 
+let rolesValidos = {
+    values: ['ADMIN_ROLE', 'USER_ROLE'],
+    message: '{VALUE} no es un rol válido'
+};
 
 let userSchema = new Schema({
     name: {
@@ -22,6 +26,11 @@ let userSchema = new Schema({
     state: {
         type: Boolean,
         default: true
+    },
+    role: {
+        type: String,
+        default: 'USER_ROLE',
+        enum: rolesValidos
     }
 });
 

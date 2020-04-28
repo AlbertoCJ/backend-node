@@ -31,8 +31,7 @@ const app = express();
 app.post('/algorithm', verifyToken, (req, res) => {
 
     let user_id = req.user._id;
-    let fileName = req.body.fileName; // 'weather-11-6-807.arff';
-    // let fileName = 'housing.arff'; // 'housing-1-1-336.arff';
+    let fileName = req.body.fileName;
     if (!fileName) {
         res.status(400).json({
             ok: false,
@@ -53,7 +52,6 @@ app.post('/algorithm', verifyToken, (req, res) => {
     }
 
     let jobName = req.body.jobName;
-    // let jobName = 'jobName';
     if (!jobName) {
         res.status(400).json({
             ok: false,
@@ -152,7 +150,8 @@ app.post('/algorithm', verifyToken, (req, res) => {
         name: jobName,
         description: jobDescription,
         dataAlgorithms: algorithms,
-        user: req.user._id
+        user: req.user._id,
+        fileName
     });
 
     let listAlgorithm = createArrayAlgorithms(algorithms);
@@ -225,6 +224,7 @@ app.post('/algorithm', verifyToken, (req, res) => {
                 let promise = await postRequest(`http://localhost:${ container.Port.PublicPort }/algorithm/${ algorithm.endpoint }`, formData, requestConfig);
                 if (promise.status) {
                     if (promise.status === 200 || promise.status === 201 || promise.status === 202) {
+                        // TODO: Actualizar el algoritmo del job aqui, o dejarlo mas adelante???????
                         containersWorking.push({ algorithm, container, task: promise.data });
                     } else {
                         console.log(promise);
