@@ -3,7 +3,7 @@ const cors = require('cors');
 const express = require('express');
 // const mongoose = require('mongoose');
 // const path = require('path');
-const { jobRemoveContainers } = require('./cron/cronJobs');
+const { cronJobTask } = require('./cron/cronJobs');
 
 const app = express();
 
@@ -30,4 +30,4 @@ app.listen(process.env.PORT, () => {
     console.log('Listen on port 3000');
 });
 
-jobRemoveContainers.start();
+cronJobTask.start();

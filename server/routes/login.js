@@ -8,7 +8,7 @@ const app = express();
 app.post('/login', (req, res) => {
     let body = req.body;
 
-    User.findOne({ email: body.email }, (err, userDB) => {
+    User.findOne({ email: body.email, state: true }, (err, userDB) => {
 
         if (err) {
             return res.status(500).json({
