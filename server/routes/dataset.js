@@ -64,6 +64,46 @@ app.get('/dataset/:id', verifyToken, (req, res) => {
 
 });
 
+app.post('/dataset/download', verifyToken, (req, res) => {
+
+    let fileName = req.body.fileName;
+    if (!fileName) {
+        res.status(400).json({
+            ok: false,
+            error: {
+                message: 'You must pass a fileName.'
+            }
+        });
+    }
+    let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileName }`);
+    if (!fs.existsSync(pathFile)) {
+        res.status(400).json({
+            ok: false,
+            error: {
+                pathFile,
+                message: 'File does not exist.'
+            }
+        });
+    }
+
+    let originalName = req.body.originalName;
+    if (!originalName) {
+        originalName = fileName;
+    }
+
+    res.download(pathFile, originalName, (err) => {
+        if (err) {
+            res.status(400).json({
+                ok: false,
+                error: {
+                    message: 'Error to download dataset.',
+                    error: err
+                }
+            });
+        }
+    });
+});
+
 app.post('/dataset', verifyToken, (req, res) => {
 
     if (!req.files || Object.keys(req.files).length === 0) {
