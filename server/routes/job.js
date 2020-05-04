@@ -123,8 +123,6 @@ app.post('/job', verifyToken, (req, res) => {
         });
     }
 
-    // let jobCreated = null;
-
     let containers = JSON.parse(req.body.containers) || [];
 
     let job = new Job({
@@ -135,10 +133,6 @@ app.post('/job', verifyToken, (req, res) => {
         fileName
     });
 
-    // let listAlgorithm = createArrayAlgorithms(algorithms);
-    // // let containersFree = [];
-    // let containersWorking = [];
-
     job.save(async(err, jobDB) => {
         if (err) {
             return res.status(500).json({
@@ -147,8 +141,6 @@ app.post('/job', verifyToken, (req, res) => {
             });
         }
         console.log('Guardado job');
-        // Almaceno el job creado
-        // jobCreated = jobDB;
 
         containers = await updateContainerWithJobId(containers, jobDB._id);
 
@@ -158,10 +150,8 @@ app.post('/job', verifyToken, (req, res) => {
             containers
         });
 
-        // mainManagerJobLauncher();
+        mainManagerJobLauncher();
     });
-    // TODO : Aqui se generara el jobs, mientras prueba algoritmo.
-    // mainManagerJobLauncher();
 });
 
 app.put('/job/:id', verifyToken, (req, res) => {

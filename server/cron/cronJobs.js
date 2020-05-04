@@ -27,7 +27,7 @@ const cronJobTask = new CronJob(`0 */${process.env.TIME_TO_RUN_CRONJOB} * * * *`
         }
     });
 
-    // mainManagerJobLauncher();
+    mainManagerJobLauncher();
 });
 
 module.exports = {
