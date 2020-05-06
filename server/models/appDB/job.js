@@ -20,11 +20,11 @@ let jobSchema = new Schema({
     },
     hasStatus: {
         type: String,
-        default: 'RUNNING' // 'ERROR', 'COMPLETED', 'PARTIAL' y 'PARTIAL_COMPLETED'
+        default: 'RUNNING' // 'ERROR', 'COMPLETED' y 'PARTIAL'
     },
-    error: {
-        type: Object,
-        default: null
+    errorList: {
+        type: Array,
+        default: []
     },
     dataAlgorithms: {
         type: Object

@@ -12,11 +12,11 @@ process.env.PATH_FILES_DATASET = 'uploads/filesDatasets';
 process.env.EXTENSION_ALLOWED = ['arff'];
 
 // Date expired token
-process.env.EXPIRED_TOKEN = 60 * 60 * 24 * 30;
+process.env.EXPIRED_TOKEN = "1 days"; // 60 * 60 * 24 * 30;
 
 // Seed authentication
 process.env.SEED = process.env.SEED || 'secret-dev'
 
 // Time cronJobs
-process.env.TIME_TO_RUN_CRONJOB = process.env.TIME_TO_RUN_CRONJOB | 1; // In minutes ej: 6
+process.env.TIME_TO_RUN_CRONJOB = process.env.TIME_TO_RUN_CRONJOB | 1; // In minutes ej: 1
 process.env.TIME_TO_REMOVE_CONTAINERS = process.env.TIME_TO_REMOVE_CONTAINERS | 5; // In minutes ej: 5

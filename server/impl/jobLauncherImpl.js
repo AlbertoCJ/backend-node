@@ -6,14 +6,11 @@ const LocalContainer = require('../models/wekaDB/localContainer');
 // Obtiene los jobs corriendo
 getJobsRunning = async() => {
     let jobsRunning = [];
-    // hasStatus: { $in: ['RUNNING', 'PARTIAL'] }
     jobsRunning = await Job.find({ $query: { hasStatus: 'RUNNING' }, $orderby: { dateCreation: 'desc' } }, async(err, jobsRunningDB) => {
-        // await Job.find({ $query: { $or: [{ hasStatus: "COMPLETED" }, { hasStatus: "COMPLETED" }] }, $orderby: { dateCreation: 'desc' } }, async(err, jobsRunningDB) => {
         if (err) {
             return [];
         }
         if (jobsRunningDB) {
-            // jobsRunningDB.forEach(jobRunning => { jobsRunning.push(jobRunning); });
             return jobsRunningDB;
         }
     });
@@ -35,36 +32,6 @@ getNumberAlgorithmsWaiting = (job) => {
     return numAlgorithmsWaiting;
 }
 
-
-
-// Obtiene los algoritmos con contenedor asignado
-// getAlgorithmsWithContainer = (objectAlgorithms) => {
-//     let arrayAlgorithmsWithContainer = [];
-//     if (objectAlgorithms.linearRegression.container) { arrayAlgorithmsWithContainer.push(objectAlgorithms.linearRegression); }
-//     if (objectAlgorithms.linearRegressionBagging.container) { arrayAlgorithmsWithContainer.push(objectAlgorithms.linearRegressionBagging); }
-//     if (objectAlgorithms.IBk.container) { arrayAlgorithms.push(arrayAlgorithmsWithContainer.IBk); }
-//     if (objectAlgorithms.ZeroR.container) { arrayAlgorithms.push(arrayAlgorithmsWithContainer.ZeroR); }
-//     if (objectAlgorithms.M5P.container) { arrayAlgorithms.push(arrayAlgorithmsWithContainer.M5P); }
-//     if (objectAlgorithms.M5Rules.container) { arrayAlgorithms.push(arrayAlgorithmsWithContainer.M5Rules); }
-//     if (objectAlgorithms.DecisionStump.container) { arrayAlgorithms.push(arrayAlgorithmsWithContainer.DecisionStump); }
-//     if (objectAlgorithms.DecisionStumpBagging.container) { arrayAlgorithms.push(arrayAlgorithmsWithContainer.DecisionStumpBagging); }
-//     return arrayAlgorithmsWithContainer;
-// }
-
-// Obtiene los algoritmos sin contenedor asignado ni tarea empezada
-// getAlgorithmsWithoutContainerAndTask = (objectAlgorithms) => {
-//     let arrayAlgorithmsWithoutContainerAndTask = [];
-//     if (objectAlgorithms.linearRegression.algorithm && !objectAlgorithms.linearRegression.container && !objectAlgorithms.linearRegression.task) { arrayAlgorithmsWithoutContainerAndTask.push(objectAlgorithms.linearRegression); }
-//     if (objectAlgorithms.linearRegressionBagging.algorithm && !objectAlgorithms.linearRegressionBagging.container && !objectAlgorithms.linearRegressionBagging.task) { arrayAlgorithmsWithoutContainerAndTask.push(objectAlgorithms.linearRegressionBagging); }
-//     if (objectAlgorithms.IBk.algorithm && !objectAlgorithms.IBk.container && !objectAlgorithms.IBk.task) { arrayAlgorithmsWithoutContainerAndTask.push(objectAlgorithms.IBk); }
-//     if (objectAlgorithms.ZeroR.algorithm && !objectAlgorithms.ZeroR.container && !objectAlgorithms.ZeroR.task) { arrayAlgorithmsWithoutContainerAndTask.push(objectAlgorithms.ZeroR); }
-//     if (objectAlgorithms.M5P.algorithm && !objectAlgorithms.M5P.container && !objectAlgorithms.M5P.task) { arrayAlgorithmsWithoutContainerAndTask.push(objectAlgorithms.M5P); }
-//     if (objectAlgorithms.M5Rules.algorithm && !objectAlgorithms.M5Rules.container && !objectAlgorithms.M5Rules.task) { arrayAlgorithmsWithoutContainerAndTask.push(objectAlgorithms.M5Rules); }
-//     if (objectAlgorithms.DecisionStump.algorithm && !objectAlgorithms.DecisionStump.container && !objectAlgorithms.DecisionStump.task) { arrayAlgorithmsWithoutContainerAndTask.push(objectAlgorithms.DecisionStump); }
-//     if (objectAlgorithms.DecisionStumpBagging.algorithm && !objectAlgorithms.DecisionStumpBagging.container && !objectAlgorithms.DecisionStumpBagging.task) { arrayAlgorithmsWithoutContainerAndTask.push(objectAlgorithms.DecisionStumpBagging); }
-//     return arrayAlgorithmsWithoutContainerAndTask;
-// }
-
 // Obtiene los contenedores del usuario y del job asignado
 getContainersOwn = async(userId, jobId) => {
     let containersOwn = [];
@@ -73,7 +40,6 @@ getContainersOwn = async(userId, jobId) => {
             return [];
         }
         if (listContainers) {
-            // listContainers.forEach(container => { containersOwn.push(container) });
             return listContainers;
         }
     });
@@ -139,54 +105,6 @@ getRequest = async(url) => {
     });
 }
 
-// Actualiza task y model en el algoritmo correspondiente
-// updateDataAlgorithms = (algorithm, dataAlgorithms, taskUpdated, model, container) => {
-//     let newDataAlgorithms = dataAlgorithms;
-//     switch (algorithm.id) {
-//         case 1:
-//             newDataAlgorithms.linearRegression.task = taskUpdated;
-//             newDataAlgorithms.linearRegression.model = model;
-//             newDataAlgorithms.linearRegression.container = container;
-//             break;
-//         case 2:
-//             newDataAlgorithms.linearRegressionBagging.task = taskUpdated;
-//             newDataAlgorithms.linearRegressionBagging.model = model;
-//             newDataAlgorithms.linearRegressionBagging.container = container;
-//             break;
-//         case 3:
-//             newDataAlgorithms.IBk.task = taskUpdated;
-//             newDataAlgorithms.IBk.model = model;
-//             newDataAlgorithms.IBk.container = container;
-//             break;
-//         case 4:
-//             newDataAlgorithms.ZeroR.task = taskUpdated;
-//             newDataAlgorithms.ZeroR.model = model;
-//             newDataAlgorithms.ZeroR.container = container;
-//             break;
-//         case 5:
-//             newDataAlgorithms.M5P.task = taskUpdated;
-//             newDataAlgorithms.M5P.model = model;
-//             newDataAlgorithms.M5P.container = container;
-//             break;
-//         case 6:
-//             newDataAlgorithms.M5Rules.task = taskUpdated;
-//             newDataAlgorithms.M5Rules.model = model;
-//             newDataAlgorithms.M5Rules.container = container;
-//             break;
-//         case 7:
-//             newDataAlgorithms.DecisionStump.task = taskUpdated;
-//             newDataAlgorithms.DecisionStump.model = model;
-//             newDataAlgorithms.DecisionStump.container = container;
-//             break;
-//         case 8:
-//             newDataAlgorithms.DecisionStumpBagging.task = taskUpdated;
-//             newDataAlgorithms.DecisionStumpBagging.model = model;
-//             newDataAlgorithms.DecisionStumpBagging.container = container;
-//             break;
-//     }
-//     return newDataAlgorithms;
-// }
-
 // Libera el contenedor poniendo working a false
 releaseContainer = async(container) => {
     let containerReleased = await LocalContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date() }, { new: true })
@@ -248,15 +166,12 @@ isPartial = (job) => {
 
 module.exports = {
     getJobsRunning,
-    // getAlgorithmsWithContainer,
-    // getAlgorithmsWithoutContainerAndTask,
     getContainersOwn,
     getContainersFree,
     updateContainerWorking,
     generateFormData,
     postRequest,
     getRequest,
-    // updateDataAlgorithms,
     releaseContainer,
     liberateContainer,
     isCompleted,

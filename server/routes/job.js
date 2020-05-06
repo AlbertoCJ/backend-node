@@ -13,6 +13,7 @@ const {
 const {
     mainManagerJobLauncher
 } = require('../impl/jobLauncher');
+const { cronJobTask } = require('../cron/cronJobs');
 
 app.get('/job', verifyToken, (req, res) => {
 
@@ -149,6 +150,9 @@ app.post('/job', verifyToken, (req, res) => {
             job: jobDB,
             containers
         });
+
+        // Inicia cronJob
+        cronJobTask.start();
 
         mainManagerJobLauncher();
     });

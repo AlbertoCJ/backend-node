@@ -1,9 +1,6 @@
 require('./config/config');
 const cors = require('cors');
 const express = require('express');
-// const mongoose = require('mongoose');
-// const path = require('path');
-const { cronJobTask } = require('./cron/cronJobs');
 
 const app = express();
 
@@ -29,5 +26,3 @@ require('./connectionsDB');
 app.listen(process.env.PORT, () => {
     console.log('Listen on port 3000');
 });
-
-cronJobTask.start();
