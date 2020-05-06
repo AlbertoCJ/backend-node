@@ -154,13 +154,27 @@ app.post('/dataset', verifyToken, (req, res) => {
                 err
             });
 
+        let attributes = [];
+        let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileNameCustom }`);
+        let data = fs.readFileSync(pathFile, 'utf-8');
+        let sentences = data.split('\n');
+        sentences.forEach(line => {
+            if (line.match(/@attribute/)) {
+                let words = line.split(' ');
+                words.shift();
+                let newLine = words.join(' ');
+                attributes.push(newLine);
+            }
+        });
+
         dataset.file = fileNameCustom;
         dataset.extension = extensionsAllowed;
         dataset.date_creation = date;
         dataset.name = name;
         dataset.full_name = file.name;
         dataset.size = size;
-
+        dataset.attributes = attributes;
+        console.log('entra2');
         dataset.save((err, datasetDB) => {
             if (err) {
                 return res.status(400).json({

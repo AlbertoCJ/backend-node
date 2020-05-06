@@ -6,9 +6,12 @@ isAnyAlgorithms = (objectAlgorithms) => {
         objectAlgorithms.IBk.algorithm ||
         objectAlgorithms.ZeroR.algorithm ||
         objectAlgorithms.M5P.algorithm ||
+        objectAlgorithms.M5PBagging.algorithm ||
         objectAlgorithms.M5Rules.algorithm ||
         objectAlgorithms.DecisionStump.algorithm ||
-        objectAlgorithms.DecisionStumpBagging.algorithm) {
+        objectAlgorithms.DecisionStumpBagging.algorithm ||
+        objectAlgorithms.Libsvm.algorithm ||
+        objectAlgorithms.LibsvmBagging.algorithm) {
         return true;
     }
     return false;

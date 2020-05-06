@@ -11,7 +11,8 @@ const {
 // `0 */${process.env.TIME_TO_RUN_CRONJOB} * * * *` // Cada x minutos
 // `*/30 * * * * *`
 const cronJobTask = new CronJob(`0 */${process.env.TIME_TO_RUN_CRONJOB} * * * *`, () => {
-    LocalContainer.find({ "User_id": "", "Job_id": "", "Working": false }, (err, listContainers) => {
+    // { "User_id": "", "Job_id": "", "Working": false }
+    LocalContainer.find({}, (err, listContainers) => {
         if (err) {}
         if (listContainers) {
             listContainers.forEach((container) => {

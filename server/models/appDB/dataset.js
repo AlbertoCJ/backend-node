@@ -30,7 +30,14 @@ let datasetSchema = new Schema({
     size: {
         type: String
     },
-    user: { type: Schema.Types.ObjectId, ref: 'User' }
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    attributes: {
+        type: Array,
+        default: []
+    }
 });
 
 // datasetSchema.plugin(uniqueValidator, { message: '{PATH} debe ser único' });

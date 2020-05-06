@@ -217,9 +217,9 @@ isCompleted = (job) => {
         if (dataAlgorithms.hasOwnProperty(key)) {
             if (dataAlgorithms[key].algorithm && !dataAlgorithms[key].task) {
                 completed = false;
-            } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.hasStatus !== 'COMPLETED') {
+            } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.status !== 'COMPLETED') {
                 completed = false;
-            } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.hasStatus === 'COMPLETED' && !dataAlgorithms[key].model) {
+            } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.status === 'COMPLETED' && !dataAlgorithms[key].model) {
                 completed = false;
             }
         }
@@ -234,9 +234,9 @@ isPartial = (job) => {
         if (dataAlgorithms.hasOwnProperty(key)) {
             if (dataAlgorithms[key].algorithm && !dataAlgorithms[key].task) {
                 partial = false;
-            } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.hasStatus !== 'COMPLETED' && dataAlgorithms[key].task.hasStatus !== 'ERROR') {
+            } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.status !== 'COMPLETED' && dataAlgorithms[key].task.status !== 'ERROR') {
                 partial = false;
-            } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.hasStatus === 'COMPLETED' && !dataAlgorithms[key].model) {
+            } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.status === 'COMPLETED' && !dataAlgorithms[key].model) {
                 partial = false;
             }
         }
