@@ -141,9 +141,15 @@ app.post('/job', verifyToken, (req, res) => {
                 err
             });
         }
-        console.log('Guardado job');
 
         containers = await updateContainerWithJobId(containers, jobDB._id);
+
+        // Inicia cronJob
+        cronJobTask.start();
+
+        mainManagerJobLauncher();
+
+        console.log('Guardado job');
 
         res.json({
             ok: true,
@@ -151,10 +157,6 @@ app.post('/job', verifyToken, (req, res) => {
             containers
         });
 
-        // Inicia cronJob
-        cronJobTask.start();
-
-        mainManagerJobLauncher();
     });
 });
 

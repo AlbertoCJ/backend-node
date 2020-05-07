@@ -29,14 +29,17 @@ mainManagerJobLauncher = async() => {
     for (let i = 0; i < jobsRunning.length; i++) {
         let job = jobsRunning[i];
 
+        // Listado de contenedores asignados a usuario y job.
+        let containersOwn = [];
+
         let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ job.fileName }`);
         if (!fs.existsSync(pathFile)) {
             job.errorList.push('File does not exist.');
             job.hasStatus = 'ERROR';
+            containersOwn = await getContainersOwn(job.user.toString(), job._id.toString());
         }
 
-        // Listado de contenedores asignados a usuario y job.
-        let containersOwn = [];
+
 
         if (job.hasStatus !== 'ERROR') {
 

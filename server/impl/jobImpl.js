@@ -23,15 +23,26 @@ updateContainerWithJobId = async(containers, jobId) => {
     let updateContainers = [];
     for (let i = 0; i < auxContainers.length; i++) {
         let container = auxContainers[i];
-        await LocalContainer.findByIdAndUpdate(container._id, { Job_id }, { new: true }, (err, containerUpdated) => {
-            if (err) {
-                console.error(err);
-            }
-            if (containerUpdated) {
+        await LocalContainer.findByIdAndUpdate(container._id, { Job_id }, { new: true })
+            .then(containerUpdated => {
+                // return containerUpdated;
                 updateContainers.push(containerUpdated);
-            }
-        });
+                console.log('ENTRA');
+            })
+            .catch(err => {
+                console.error(err);
+            });
+
+        // , (err, containerUpdated) => {
+        //     if (err) {
+        //         console.error(err);
+        //     }
+        //     if (containerUpdated) {
+        //         updateContainers.push(containerUpdated);
+        //     }
+        // });
     }
+    console.log('devuelve');
     return updateContainers;
 }
 
