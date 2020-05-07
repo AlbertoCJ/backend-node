@@ -27,22 +27,11 @@ updateContainerWithJobId = async(containers, jobId) => {
             .then(containerUpdated => {
                 // return containerUpdated;
                 updateContainers.push(containerUpdated);
-                console.log('ENTRA');
             })
             .catch(err => {
                 console.error(err);
             });
-
-        // , (err, containerUpdated) => {
-        //     if (err) {
-        //         console.error(err);
-        //     }
-        //     if (containerUpdated) {
-        //         updateContainers.push(containerUpdated);
-        //     }
-        // });
     }
-    console.log('devuelve');
     return updateContainers;
 }
 

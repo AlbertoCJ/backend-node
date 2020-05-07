@@ -68,21 +68,16 @@ app.post('/dataset/download', verifyToken, (req, res) => {
 
     let fileName = req.body.fileName;
     if (!fileName) {
-        res.status(400).json({
+        return res.status(400).json({
             ok: false,
-            error: {
-                message: 'You must pass a fileName.'
-            }
+            message: 'You must pass a fileName.'
         });
     }
     let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileName }`);
     if (!fs.existsSync(pathFile)) {
-        res.status(400).json({
+        return res.status(400).json({
             ok: false,
-            error: {
-                pathFile,
-                message: 'File does not exist.'
-            }
+            message: 'File does not exist.'
         });
     }
 
@@ -93,12 +88,9 @@ app.post('/dataset/download', verifyToken, (req, res) => {
 
     res.download(pathFile, originalName, (err) => {
         if (err) {
-            res.status(400).json({
+            return res.status(400).json({
                 ok: false,
-                error: {
-                    message: 'Error to download dataset.',
-                    error: err
-                }
+                message: 'Error to download dataset.'
             });
         }
     });
@@ -109,9 +101,7 @@ app.post('/dataset', verifyToken, (req, res) => {
     if (!req.files || Object.keys(req.files).length === 0) {
         return res.status(400).json({
             ok: false,
-            err: {
-                message: 'No files were uploaded.'
-            }
+            message: 'No files were uploaded.'
         });
     }
 
@@ -129,10 +119,8 @@ app.post('/dataset', verifyToken, (req, res) => {
     if (extensionsAllowed.indexOf(extension) < 0) {
         return res.status(400).json({
             ok: false,
-            err: {
-                message: 'Extensions allowed are ' + extensionsAllowed.join(', '),
-                ext: extension
-            }
+            message: 'Extensions allowed are ' + extensionsAllowed.join(', '),
+            ext: extension
         });
     }
 
@@ -231,9 +219,7 @@ app.delete('/dataset/:id', verifyToken, (req, res) => {
         if (datasetRemoved === null) {
             return res.status(500).json({
                 ok: false,
-                err: {
-                    message: 'Dataset not found.'
-                }
+                message: 'Dataset not found.'
             });
         }
 

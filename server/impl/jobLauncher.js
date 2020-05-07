@@ -3,15 +3,12 @@ const path = require('path');
 const Job = require('../models/appDB/job');
 const {
     getJobsRunning,
-    // getAlgorithmsWithContainer,
-    // getAlgorithmsWithoutContainerAndTask,
     getContainersOwn,
     getContainersFree,
     updateContainerWorking,
     generateFormData,
     postRequest,
     getRequest,
-    // updateDataAlgorithms,
     releaseContainer,
     liberateContainer,
     isCompleted,
@@ -46,24 +43,24 @@ mainManagerJobLauncher = async() => {
             // Numero de algoritmos esperando.
             let numAlgorithmsWaiting = getNumberAlgorithmsWaiting(job);
 
-            if (numAlgorithmsWaiting > 0) {
-                containersOwn = await getContainersOwn(job.user.toString(), job._id.toString());
+            // if (numAlgorithmsWaiting > 0) {
+            containersOwn = await getContainersOwn(job.user.toString(), job._id.toString());
 
-                if (numAlgorithmsWaiting > containersOwn.length) { // Si hay más algoritmos que contenedores.
-                    // Obtener contenedores si hay libres.
-                    let numContainers = numAlgorithmsWaiting - containersOwn.length;
-                    let containersFree = await getContainersFree(numContainers, job.user, job._id);
-                    containersOwn = containersOwn.concat(containersFree);
-                } else if (numAlgorithmsWaiting < containersOwn.length) { // Si hay menos algoritmos que contenedores.
-                    // Libero contenedores si no son necesarios.
-                    let numContainers = containersOwn.length - numAlgorithmsWaiting;
-                    while (numContainers > 0 && containersOwn.length > 0) {
-                        let containerLiberate = containersOwn.shift();
-                        await liberateContainer(containerLiberate);
-                        numContainers--;
-                    }
+            if (numAlgorithmsWaiting > containersOwn.length) { // Si hay más algoritmos que contenedores.
+                // Obtener contenedores si hay libres.
+                let numContainers = numAlgorithmsWaiting - containersOwn.length;
+                let containersFree = await getContainersFree(numContainers, job.user, job._id);
+                containersOwn = containersOwn.concat(containersFree);
+            } else if (numAlgorithmsWaiting < containersOwn.length) { // Si hay menos algoritmos que contenedores.
+                // Libero contenedores si no son necesarios.
+                let numContainers = containersOwn.length - numAlgorithmsWaiting;
+                while (numContainers > 0 && containersOwn.length > 0) {
+                    let containerLiberate = containersOwn.shift();
+                    await liberateContainer(containerLiberate);
+                    numContainers--;
                 }
             }
+            // }
 
             // Recorro los algoritmos
             for (const key in job.dataAlgorithms) {
@@ -150,22 +147,38 @@ mainManagerJobLauncher = async() => {
                                                 // TODO: ¿Que hacer con este error? Guardar model como viene
                                                 // console.error(promiseModel);
                                                 currentAlgorithm.errorList.push(promiseModel.message);
+                                                // Release container
+                                                let containerReleased = await releaseContainer(currentAlgorithm.container);
+                                                containersOwn.push(containerReleased);
+                                                currentAlgorithm.container = null;
                                             }
                                         } else {
                                             // TODO: ¿Que hacer con este error? Crear un objeto model del estilo de error de la api, y guardarlo en model
                                             // console.error(promiseModel);
                                             currentAlgorithm.errorList.push('Error with container getting model');
+                                            // Release container
+                                            let containerReleased = await releaseContainer(currentAlgorithm.container);
+                                            containersOwn.push(containerReleased);
+                                            currentAlgorithm.container = null;
                                         }
                                     }
                                 } else {
                                     // TODO: ¿Que hacer con este error? Guardar task como viene
                                     // console.error(promiseTask);
                                     currentAlgorithm.errorList.push(promiseTask.message);
+                                    // Release container
+                                    let containerReleased = await releaseContainer(currentAlgorithm.container);
+                                    containersOwn.push(containerReleased);
+                                    currentAlgorithm.container = null;
                                 }
                             } else {
                                 // TODO: ¿Que hacer con este error? Crear un objeto task del estilo de error de la api, y guardarlo en task
                                 // console.error(promiseTask);
                                 currentAlgorithm.errorList.push('Error with container getting task');
+                                // Release container
+                                let containerReleased = await releaseContainer(currentAlgorithm.container);
+                                containersOwn.push(containerReleased);
+                                currentAlgorithm.container = null;
                             }
                         }
                     }
@@ -193,10 +206,11 @@ mainManagerJobLauncher = async() => {
             }
         }
 
-        console.log('final job', job); // TODO: PARA PROBAR
+        // console.log('final job', job); // TODO: PARA PROBAR
+        console.log('final job'); // TODO: PARA PROBAR
 
         // Actualiza el job en la BD
-        await Job.findByIdAndUpdate(job._id, { hasStatus: job.hasStatus, error: job.error, dataAlgorithms: job.dataAlgorithms, }, { new: true }, async(err, jobDB) => {
+        await Job.findByIdAndUpdate(job._id, { hasStatus: job.hasStatus, error: job.error, dataAlgorithms: job.dataAlgorithms, errorList: job.errorList }, { new: true }, async(err, jobDB) => {
             if (err) {
                 console.error(err);
             }

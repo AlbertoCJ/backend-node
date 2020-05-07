@@ -164,9 +164,7 @@ app.delete('/user/:id', verifyToken, (req, res) => {
         if (userRemoved === null) {
             return res.status(400).json({
                 ok: false,
-                err: {
-                    message: 'Usuario no encontrado'
-                }
+                message: 'User not found'
             });
         }
 

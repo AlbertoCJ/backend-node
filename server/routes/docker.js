@@ -18,9 +18,7 @@ app.post('/containers', verifyToken, (req, res) => {
         if (statusList.indexOf(status) < 0) {
             return res.status(400).json({
                 ok: false,
-                error: {
-                    message: 'Status required, the list of status are valid, ' + statusList.join(', ')
-                }
+                message: 'Status required, the list of status are valid, ' + statusList.join(', ')
             });
         }
         config = { filters: { "status": [status] } };
@@ -39,7 +37,7 @@ app.post('/containers', verifyToken, (req, res) => {
         }).catch(function(err) {
             res.status(500).json({
                 ok: false,
-                error: err
+                err
             });
         });
 });
@@ -50,9 +48,7 @@ app.post('/containers/:id', verifyToken, (req, res) => {
     if (!idContainer) {
         return res.status(400).json({
             ok: false,
-            error: {
-                message: 'Id container required'
-            }
+            message: 'Id container required'
         });
     }
 
@@ -61,9 +57,7 @@ app.post('/containers/:id', verifyToken, (req, res) => {
     if (actionList.indexOf(action) < 0) {
         return res.status(400).json({
             ok: false,
-            err: {
-                message: 'Action required, the list of actions are ' + actionList.join(', ')
-            }
+            message: 'Action required, the list of actions are ' + actionList.join(', ')
         });
     }
 
@@ -80,7 +74,7 @@ app.post('/containers/:id', verifyToken, (req, res) => {
                 }).catch(function(err) {
                     res.status(500).json({
                         ok: false,
-                        error: err
+                        err
                     });
                 });
             break;
@@ -94,7 +88,7 @@ app.post('/containers/:id', verifyToken, (req, res) => {
                 }).catch(function(err) {
                     res.status(500).json({
                         ok: false,
-                        error: err
+                        err
                     });
                 });
             break;
@@ -109,7 +103,7 @@ app.post('/containers/:id', verifyToken, (req, res) => {
                 }).catch(function(err) {
                     res.status(500).json({
                         ok: false,
-                        error: err
+                        err
                     });
                 });
             break;
@@ -123,9 +117,7 @@ app.post('/container/run', verifyToken, (req, res) => {
         if (!nContainers) {
             return res.status(400).json({
                 ok: false,
-                error: {
-                    message: 'Number container required'
-                }
+                message: 'Number container required'
             });
         }
 
@@ -133,9 +125,7 @@ app.post('/container/run', verifyToken, (req, res) => {
         if (!numMaxContainerDockerConfig) {
             return res.status(500).json({
                 ok: false,
-                error: {
-                    message: 'Error when obtaining maximum number of local containers from configuration.'
-                }
+                message: 'Error when obtaining maximum number of local containers from configuration.'
             });
         }
 
@@ -143,9 +133,7 @@ app.post('/container/run', verifyToken, (req, res) => {
         if (numMaxContainerDocker < 0) {
             return res.status(500).json({
                 ok: false,
-                error: {
-                    message: 'Error when obtaining maximum number of local containers from the database.'
-                }
+                message: 'Error when obtaining maximum number of local containers from the database.'
             });
         }
 
@@ -153,26 +141,20 @@ app.post('/container/run', verifyToken, (req, res) => {
         if (numContainerRun === 0) {
             return res.status(600).json({ // error 600 creado el maximo de contenedores
                 ok: false,
-                error: {
-                    message: 'No more containers can be created.'
-                }
+                message: 'No more containers can be created.'
             });
         }
         if (numContainerRun < 0) {
             return res.status(601).json({ // error 601 hay un excesso de contenedores
                 ok: false,
-                error: {
-                    message: 'There is an excess of containers created.'
-                }
+                message: 'There is an excess of containers created.'
             });
         }
         if (numContainerRun > 0 && numContainerRun < nContainers) {
             return res.status(602).json({ // error 602 no se pueden crear mas de N contenedores
                 ok: false,
-                error: {
-                    message: `Cannot create more than ${ numContainerRun } containers.`,
-                    numMaxContainerRun: numContainerRun
-                }
+                message: `Cannot create more than ${ numContainerRun } containers.`,
+                numMaxContainerRun: numContainerRun
             });
         }
 
@@ -291,7 +273,7 @@ app.post('/container/run', verifyToken, (req, res) => {
                             if (err) {
                                 res.status(500).json({
                                     ok: false,
-                                    error: err
+                                    err
                                 });
                             }
                         });
@@ -299,7 +281,7 @@ app.post('/container/run', verifyToken, (req, res) => {
                 }).catch(err => {
                     res.status(500).json({
                         ok: false,
-                        error: err
+                        err
                     });
                 });
         }, 5000 + ((nContainers - 1) * 1000));
