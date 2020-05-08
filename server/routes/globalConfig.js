@@ -69,6 +69,8 @@ app.put('/globalConfig/:id', verifyToken, (req, res) => {
             });
         }
 
+
+
         res.json({
             ok: true,
             globalConfig: globalConfigDB
@@ -90,6 +92,8 @@ app.put('/globalConfig/restore/:id', verifyToken, (req, res) => {
 
     let id = req.params.id;
     let body = new GlobalConfig(); // req.body; // _.pick(req.body, 'description'); // Undercore library
+
+    body._id = id;
 
     GlobalConfig.findByIdAndUpdate(id, body, { new: true }, (err, globalConfigDB) => {
 
