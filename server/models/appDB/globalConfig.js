@@ -16,8 +16,8 @@ let globalConfigSchema = new Schema({
         type: Object,
         default: {
             dashboard: {
-                showLatestsJobs: 2,
-                showJobsRunning: 5
+                showLatestsJobs: 5,
+                showJobsRunning: 2
             },
             dataset: {
                 showDatasets: 4
@@ -25,6 +25,22 @@ let globalConfigSchema = new Schema({
             job: {
                 showJobs: 4
             }
+        }
+    },
+    algorithms: {
+        type: Object,
+        default: {
+            linearRegression: true,
+            linearRegressionBagging: true,
+            IBk: true,
+            ZeroR: true,
+            M5P: true,
+            M5PBagging: true,
+            M5Rules: true,
+            DecisionStump: true,
+            DecisionStumpBagging: true,
+            Libsvm: true,
+            LibsvmBagging: true
         }
     }
 });
