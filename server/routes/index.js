@@ -9,5 +9,6 @@ app.use(require('./job'));
 // app.use(require('./algorithm2')); // TODO: Eliminar linea y fichero .js
 app.use(require('./docker'));
 app.use(require('./globalConfig'));
+app.use(require('./localContainer'));
 
 module.exports = app;

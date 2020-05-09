@@ -1,6 +1,6 @@
 const express = require('express');
 const { verifyToken } = require('../middlewares/authentication');
-const { getCountContainers, getLastPort } = require('../impl/dockerImpl');
+const { getNumContMaxGlobal, getCountContainers, getLastPort } = require('../impl/dockerImpl');
 const LocalContainer = require('../models/wekaDB/localContainer');
 const Docker = require('dockerode');
 
@@ -121,7 +121,7 @@ app.post('/container/run', verifyToken, (req, res) => {
             });
         }
 
-        let numMaxContainerDockerConfig = 4; // TODO: Obtener desde configuracion
+        let numMaxContainerDockerConfig = await getNumContMaxGlobal();
         if (!numMaxContainerDockerConfig) {
             return res.status(500).json({
                 ok: false,

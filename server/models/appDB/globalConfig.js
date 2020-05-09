@@ -8,8 +8,7 @@ let globalConfigSchema = new Schema({
     localContainer: {
         type: Object,
         default: {
-            numContMaxGlobal: 10,
-            numContMaxUser: 4
+            numContMaxGlobal: 10
         }
     },
     showLists: {
