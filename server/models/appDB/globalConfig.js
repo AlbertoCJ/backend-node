@@ -14,7 +14,7 @@ let globalConfigSchema = new Schema({
     showLists: {
         type: Object,
         default: {
-            dashboard: {
+            home: {
                 showLatestsJobs: 5,
                 showJobsRunning: 2
             },
