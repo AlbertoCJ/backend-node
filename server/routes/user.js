@@ -127,6 +127,27 @@ app.put('/userPass/:id', verifyToken, (req, res) => {
     });
 })
 
+app.put('/userLanguage/:id', verifyToken, (req, res) => {
+
+    let id = req.params.id;
+    let language = req.body.language;
+
+    User.findByIdAndUpdate(id, { language: language }, { new: true }, (err, userDB) => {
+
+        if (err) {
+            return res.status(400).json({
+                ok: false,
+                err
+            });
+        }
+
+        res.json({
+            ok: true,
+            user: userDB
+        });
+    });
+})
+
 // app.put('/userState/:id', verifyToken, (req, res) => {
 
 //     let id = req.params.id;

@@ -36,6 +36,10 @@ let userSchema = new Schema({
         type: String,
         default: 'USER_ROLE',
         enum: rolesValidos
+    },
+    language: {
+        type: String,
+        default: 'es'
     }
 });
 
