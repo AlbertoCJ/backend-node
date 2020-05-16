@@ -217,8 +217,6 @@ app.post('/job', verifyToken, async(req, res) => {
 
         containers = await updateContainerWithJobId(containers, jobDB._id);
 
-        console.log(containers);
-
         mainManagerJobLauncher();
 
         console.log('Guardado job');
