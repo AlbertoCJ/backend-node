@@ -14,6 +14,7 @@ const {
     isCompleted,
     isPartial
 } = require('./jobLauncherImpl');
+const FormData = require('form-data');
 
 mainManagerJobLauncher = async() => {
 
@@ -94,14 +95,14 @@ mainManagerJobLauncher = async() => {
                             } else {
                                 // currentAlgorithm.task = promise.data;
                                 // TODO: Este error se almacenara en el array de error del algoritmo.
-                                currentAlgorithm.errorList.push(promise.message);
+                                currentAlgorithm.algorithm.errorList.push(promise.message);
                             }
 
                         } else {
                             // TODO: ¿Que hacer con este error?
                             // console.error(promise);
                             // containersWorking.push({ algorithm, container, error: promise });
-                            currentAlgorithm.errorList.push('Error with container launching algorithm.');
+                            currentAlgorithm.algorithm.errorList.push('Error with container launching algorithm.');
                         }
 
                         // Algoritmo iniciado pero no terminado.    
@@ -132,11 +133,49 @@ mainManagerJobLauncher = async() => {
 
                                     }
                                     if (task.status === 'COMPLETED') { // && task.percentageCompleted === 100
+
+                                        // Obtener modelo
                                         let promiseModel = await getRequest(task.resultURI);
                                         if (promiseModel.status) {
                                             if (promiseModel.status === 200 || promiseModel.status === 201 || promiseModel.status === 202) {
                                                 currentAlgorithm.model = promiseModel.data;
                                                 console.log('Model actualizado'); // TODO: PARA PROBAR
+
+                                                // Obtener la prediccion
+                                                let formData = new FormData();
+                                                formData.append('file', fs.createReadStream(pathFile));
+
+                                                let requestConfig = {
+                                                    headers: {
+                                                        'accept': 'text/x-arff',
+                                                        'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
+                                                    }
+                                                }
+
+                                                let promisePrediction = await postRequest(task.resultURI, formData, requestConfig);
+                                                if (promisePrediction.status) {
+                                                    if (promisePrediction.status === 200 || promisePrediction.status === 201 || promisePrediction.status === 202) {
+
+                                                        let rows = promisePrediction.data.split('\n');
+                                                        let fields = rows.map( row => { 
+                                                            let field = row.split(',');
+                                                            return Number(field[field.length - 1]);
+                                                        });
+                                                        currentAlgorithm.model.prediction = fields;
+
+                                                    } else {
+                                                        // currentAlgorithm.task = promise.data;
+                                                        // TODO: Este error se almacenara en el array de error del algoritmo.
+                                                        currentAlgorithm.algorithm.errorList.push(promisePrediction.message);
+                                                    }
+
+                                                } else {
+                                                    // TODO: ¿Que hacer con este error?
+                                                    // console.error(promise);
+                                                    // containersWorking.push({ algorithm, container, error: promise });
+                                                    currentAlgorithm.algorithm.errorList.push('Error with container getting prediction.');
+                                                }
+
 
                                                 // Release container
                                                 let containerReleased = await releaseContainer(currentAlgorithm.container);
@@ -161,6 +200,7 @@ mainManagerJobLauncher = async() => {
                                             containersOwn.push(containerReleased);
                                             currentAlgorithm.container = null;
                                         }
+
                                     }
                                 } else {
                                     // TODO: ¿Que hacer con este error? Guardar task como viene
@@ -174,7 +214,7 @@ mainManagerJobLauncher = async() => {
                             } else {
                                 // TODO: ¿Que hacer con este error? Crear un objeto task del estilo de error de la api, y guardarlo en task
                                 // console.error(promiseTask);
-                                currentAlgorithm.errorList.push('Error with container getting task');
+                                currentAlgorithm.algorithm.errorList.push('Error with container getting task');
                                 // Release container
                                 let containerReleased = await releaseContainer(currentAlgorithm.container);
                                 containersOwn.push(containerReleased);
