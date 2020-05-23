@@ -1,6 +1,7 @@
 const FormData = require('form-data');
 const axios = require('axios');
 const Job = require('../models/appDB/job');
+const Time = require('../models/appDB/time');
 const LocalContainer = require('../models/wekaDB/localContainer');
 
 // Obtiene los jobs corriendo
@@ -162,6 +163,16 @@ isPartial = (job) => {
     return partial;
 }
 
+// Actualizar time al finalizar job
+updateTime = async(job) => {
+    await Time.findByIdAndUpdate(job.time, { hasStatus: job.hasStatus, end: new Date() }, { new: true })
+        .then(timeUpdated => {
+            return timeUpdated;
+        })
+        .catch(err => {
+            console.error(err);
+        });
+}
 
 
 module.exports = {
@@ -175,5 +186,6 @@ module.exports = {
     releaseContainer,
     liberateContainer,
     isCompleted,
-    isPartial
+    isPartial,
+    updateTime
 }

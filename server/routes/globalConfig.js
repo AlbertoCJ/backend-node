@@ -91,7 +91,7 @@ app.put('/globalConfig/restore/:id', verifyToken, (req, res) => {
     }
 
     let id = req.params.id;
-    let body = new GlobalConfig(); // req.body; // _.pick(req.body, 'description'); // Undercore library
+    let body = new GlobalConfig();
 
     body._id = id;
 

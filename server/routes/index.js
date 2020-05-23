@@ -10,5 +10,6 @@ app.use(require('./job'));
 app.use(require('./docker'));
 app.use(require('./globalConfig'));
 app.use(require('./localContainer'));
+app.use(require('./time'));
 
 module.exports = app;

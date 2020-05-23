@@ -35,10 +35,13 @@ let jobSchema = new Schema({
     },
     fileName: {
         type: String
+    },
+    time: {
+        type: Schema.Types.ObjectId,
+        ref: 'Time'
     }
 });
 
-// jobSchema.plugin(uniqueValidator, { name: '{PATH} must be unique' });
 jobSchema.plugin(mongoosePaginate);
 
 module.exports = appDB.model('Job', jobSchema);

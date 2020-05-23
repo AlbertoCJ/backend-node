@@ -1,6 +1,7 @@
 const express = require('express');
 // const fileUpload = require('express-fileupload');
 const Job = require('../models/appDB/job');
+const Time = require('../models/appDB/time');
 const { verifyToken } = require('../middlewares/authentication');
 const _ = require('underscore');
 const fs = require('fs');
@@ -198,16 +199,13 @@ app.post('/job', verifyToken, async(req, res) => {
         });
     }
 
-
-    let job = new Job({
-        name: jobName,
-        description: jobDescription,
-        dataAlgorithms: algorithms,
+    let time = new Time({
         user: user_id,
-        fileName
+        jobName: jobName,
+        jobDescription: jobDescription
     });
 
-    job.save(async(err, jobDB) => {
+    time.save((err, timeDB) => {
         if (err) {
             return res.status(500).json({
                 ok: false,
@@ -215,19 +213,38 @@ app.post('/job', verifyToken, async(req, res) => {
             });
         }
 
-        containers = await updateContainerWithJobId(containers, jobDB._id);
-
-        mainManagerJobLauncher();
-
-        console.log('Guardado job');
-
-        return res.json({
-            ok: true,
-            job: jobDB,
-            containers
+        let job = new Job({
+            name: jobName,
+            description: jobDescription,
+            dataAlgorithms: algorithms,
+            user: user_id,
+            fileName,
+            time: timeDB._id
         });
 
+        job.save(async(err, jobDB) => {
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    err
+                });
+            }
+    
+            containers = await updateContainerWithJobId(containers, jobDB._id);
+    
+            mainManagerJobLauncher();
+    
+            console.log('Guardado job');
+    
+            return res.json({
+                ok: true,
+                job: jobDB,
+                containers
+            });
+    
+        });
     });
+
 });
 
 app.put('/job/:id', verifyToken, (req, res) => {

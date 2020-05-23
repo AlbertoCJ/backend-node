@@ -12,7 +12,8 @@ const {
     releaseContainer,
     liberateContainer,
     isCompleted,
-    isPartial
+    isPartial,
+    updateTime
 } = require('./jobLauncherImpl');
 const FormData = require('form-data');
 
@@ -232,21 +233,23 @@ mainManagerJobLauncher = async() => {
                 let containerLiberate = containersOwn.shift();
                 await liberateContainer(containerLiberate);
             }
+            updateTime(job);
         } else if (isCompleted(job)) {
             job.hasStatus = 'COMPLETED';
             while (containersOwn.length > 0) {
                 let containerLiberate = containersOwn.shift();
                 await liberateContainer(containerLiberate);
             }
+            updateTime(job);
         } else if (isPartial(job)) {
             job.hasStatus = 'PARTIAL';
             while (containersOwn.length > 0) {
                 let containerLiberate = containersOwn.shift();
                 await liberateContainer(containerLiberate);
             }
+            updateTime(job);
         }
 
-        // console.log('final job', job); // TODO: PARA PROBAR
         console.log('final job'); // TODO: PARA PROBAR
 
         // Actualiza el job en la BD
