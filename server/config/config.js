@@ -20,3 +20,7 @@ process.env.SEED = process.env.SEED || 'secret-dev'
 // Time cronJobs
 process.env.TIME_TO_RUN_CRONJOB = process.env.TIME_TO_RUN_CRONJOB | 1; // In minutes ej: 1
 process.env.TIME_TO_REMOVE_CONTAINERS = process.env.TIME_TO_REMOVE_CONTAINERS | 5; // In minutes ej: 5
+
+// Config Email
+process.env.EMAIL = process.env.EMAIL || 'null';
+process.env.EMAIL_PASS = process.env.EMAIL_PASS || 'null';
