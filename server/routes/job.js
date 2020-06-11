@@ -150,11 +150,19 @@ app.get('/job/:id', verifyToken, (req, res) => {
 app.post('/job', verifyToken, async(req, res) => {
 
     let user_id = req.user._id;
+    let platform = req.platform;
     let fileName = req.body.fileName;
     let containers = JSON.parse(req.body.containers) || [];
 
     // Inicia cronJob
     cronJobTask.start();
+
+    if (!platform) {
+        return res.status(400).json({
+            ok: false,
+            message: 'You must pass a platform.'
+        });
+    }
 
     if (!fileName) {
         return res.status(400).json({
@@ -219,7 +227,8 @@ app.post('/job', verifyToken, async(req, res) => {
             dataAlgorithms: algorithms,
             user: user_id,
             fileName,
-            time: timeDB._id
+            time: timeDB._id,
+            platform
         });
 
         job.save(async(err, jobDB) => {

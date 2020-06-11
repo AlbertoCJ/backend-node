@@ -39,6 +39,10 @@ let jobSchema = new Schema({
     time: {
         type: Schema.Types.ObjectId,
         ref: 'Time'
+    },
+    platform: {
+        type: String,
+        default: null // 'LOCAL' o 'AWS'
     }
 });
 

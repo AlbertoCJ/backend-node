@@ -24,3 +24,7 @@ process.env.TIME_TO_REMOVE_CONTAINERS = process.env.TIME_TO_REMOVE_CONTAINERS | 
 // Config Email
 process.env.EMAIL = process.env.EMAIL || 'null';
 process.env.EMAIL_PASS = process.env.EMAIL_PASS || 'null';
+
+// AWS CREDENT
+// process.env.AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
+// process.env.AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;

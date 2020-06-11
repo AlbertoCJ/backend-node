@@ -8,6 +8,7 @@ app.use(require('./dataset'));
 app.use(require('./job'));
 // app.use(require('./algorithm2')); // TODO: Eliminar linea y fichero .js
 app.use(require('./docker'));
+app.use(require('./dockerAWS'));
 app.use(require('./globalConfig'));
 app.use(require('./localContainer'));
 app.use(require('./time'));
