@@ -150,7 +150,7 @@ app.get('/job/:id', verifyToken, (req, res) => {
 app.post('/job', verifyToken, async(req, res) => {
 
     let user_id = req.user._id;
-    let platform = req.platform;
+    let platform = req.body.platform;
     let fileName = req.body.fileName;
     let containers = JSON.parse(req.body.containers) || [];
 
@@ -158,6 +158,10 @@ app.post('/job', verifyToken, async(req, res) => {
     cronJobTask.start();
 
     if (!platform) {
+        while (containers.length > 0) {
+            let containerLiberate = containers.shift();
+            await liberateContainer(containerLiberate, platform);
+        }
         return res.status(400).json({
             ok: false,
             message: 'You must pass a platform.'
@@ -174,7 +178,7 @@ app.post('/job', verifyToken, async(req, res) => {
     if (!fs.existsSync(pathFile)) {
         while (containers.length > 0) {
             let containerLiberate = containers.shift();
-            await liberateContainer(containerLiberate);
+            await liberateContainer(containerLiberate, platform);
         }
         return res.status(404).json({
             ok: false,
@@ -238,11 +242,11 @@ app.post('/job', verifyToken, async(req, res) => {
                     err
                 });
             }
-    
-            containers = await updateContainerWithJobId(containers, jobDB._id);
-    
+
+            containers = await updateContainerWithJobId(containers, jobDB._id, platform);
+
             mainManagerJobLauncher();
-    
+            
             console.log('Guardado job');
     
             return res.json({

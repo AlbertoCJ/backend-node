@@ -1,6 +1,8 @@
 // Port
 process.env.PORT = process.env.PORT || 3000;
 
+process.env.URL_DOCKER_LOCAL_SERVER = process.env.URL_DOCKER_LOCAL_SERVER || 'http://localhost';
+
 // uri´s DB
 process.env.MONGODB_URI_APP = process.env.MONGODB_URI_APP;
 process.env.MONGODB_URI_WEKA_NODE = process.env.MONGODB_URI_WEKA_NODE;

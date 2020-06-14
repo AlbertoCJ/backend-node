@@ -3,6 +3,11 @@ const axios = require('axios');
 const Job = require('../models/appDB/job');
 const Time = require('../models/appDB/time');
 const LocalContainer = require('../models/wekaDB/localContainer');
+const AwsContainer = require('../models/wekaDB/awsContainer');
+
+const AWS = require('aws-sdk');
+AWS.config.update({region:'us-east-1'});
+const elasticbeanstalk = new AWS.ElasticBeanstalk();
 
 // Obtiene los jobs corriendo
 getJobsRunning = async() => {
@@ -33,48 +38,133 @@ getNumberAlgorithmsWaiting = (job) => {
     return numAlgorithmsWaiting;
 }
 
-// Obtiene los contenedores del usuario y del job asignado
-getContainersOwn = async(userId, jobId) => {
-    let containersOwn = [];
-    containersOwn = await LocalContainer.find({ "User_id": userId, "Job_id": jobId, "Working": false }, async(err, listContainers) => {
+// Actualiza los contenedores en DB
+updateAWSContainerLaunching = async(userId, jobId) => {
+    await AwsContainer.find({ "User_id": userId, "Job_id": jobId, "Working": false, Status: 'Launching' }, async(err, listContainers) => {
         if (err) {
             return [];
         }
         if (listContainers) {
-            return listContainers;
+            // return listContainers;
+            listContainers.forEach(async awsContainerDB => {
+                let params = {
+                    EnvironmentNames: [
+                        awsContainerDB.Environment_name[0]
+                    ]
+                };
+                await elasticbeanstalk.describeEnvironments(params, async function(err, dataGetEnvironment) {
+                    if (err) console.log(err, err.stack); // an error occurred
+                    else {  // successful response  
+                        let dataEnv = dataGetEnvironment.Environments[0];
+                        
+                        let awsContainerUpdate = {
+                            Health: dataEnv.Health,
+                            Health_status: dataEnv.HealthStatus,
+                            Status: dataEnv.Status,
+                            Endpoint_URL: dataEnv.EndpointURL,
+                            Date_work_end: new Date()
+                        };
+                
+                        await AwsContainer.findByIdAndUpdate(awsContainerDB._id, awsContainerUpdate, { new: true })
+                        .then(containerUpdated => {
+                            // return containerUpdated;
+                            // updateContainers.push(containerUpdated);
+                        })
+                        .catch(err => {
+                            console.error(err);
+                        });
+
+                    }         
+                });
+            });
         }
     });
+}
+
+// Obtiene los contenedores del usuario y del job asignado
+getContainersOwn = async(userId, jobId, platform) => {
+    let containersOwn = [];
+    if (platform === 'LOCAL') {
+        containersOwn = await LocalContainer.find({ "User_id": userId, "Job_id": jobId, "Working": false }, async(err, listContainers) => {
+            if (err) {
+                return [];
+            }
+            if (listContainers) {
+                return listContainers;
+            }
+        });
+    } else {
+        containersOwn = await AwsContainer.find({ "User_id": userId, "Job_id": jobId, "Working": false, Status: 'Ready' }, async(err, listContainers) => {
+            if (err) {
+                return [];
+            }
+            if (listContainers) {
+                return listContainers;
+            }
+        });
+    }
+    
     return containersOwn;
 }
 
 // Obtiene los contenedores libres (sin usuario ni job asignado), asignandolos a ese usuario y job
-getContainersFree = async(numContainersGet, userId, jobId) => {
+getContainersFree = async(numContainersGet, userId, jobId, platform) => {
     let containersUpdated = [];
-    await LocalContainer.find({ "User_id": "", "Job_id": "", "Working": false }, async(err, listContainers) => {
-        if (listContainers) {
-            for (let i = 0; i < numContainersGet && i < listContainers.length; i++) {
-                let container = listContainers[i];
-                await LocalContainer.findByIdAndUpdate(container._id, { User_id: userId, Job_id: jobId }, { new: true }, (err, containerUpdated) => {
-                    if (containerUpdated) {
-                        containersUpdated.push(containerUpdated);
-                    }
-                });
-            }
 
-        }
-    });
+    if (platform === 'LOCAL') {
+        await LocalContainer.find({ "User_id": "", "Job_id": "", "Working": false }, async(err, listContainers) => {
+            if (listContainers) {
+                for (let i = 0; i < numContainersGet && i < listContainers.length; i++) {
+                    let container = listContainers[i];
+                    await LocalContainer.findByIdAndUpdate(container._id, { User_id: userId, Job_id: jobId }, { new: true }, (err, containerUpdated) => {
+                        if (containerUpdated) {
+                            containersUpdated.push(containerUpdated);
+                        }
+                    });
+                }
+    
+            }
+        });
+    } else {
+        await AwsContainer.find({ "User_id": "", "Job_id": "", "Working": false, Status: 'Ready' }, async(err, listContainers) => {
+            if (listContainers) {
+                for (let i = 0; i < numContainersGet && i < listContainers.length; i++) {
+                    let container = listContainers[i];
+                    await LocalContainer.findByIdAndUpdate(container._id, { User_id: userId, Job_id: jobId }, { new: true }, (err, containerUpdated) => {
+                        if (containerUpdated) {
+                            containersUpdated.push(containerUpdated);
+                        }
+                    });
+                }
+    
+            }
+        });
+    }
+    
     return containersUpdated;
 }
 
 // Actualizar contenedor working true y date_work_end fecha actual
-updateContainerWorking = async(container) => {
-    let containerWorking = await LocalContainer.findByIdAndUpdate(container._id, { Working: true, Date_work_end: new Date() }, { new: true })
+updateContainerWorking = async(container, platform) => {
+    let containerWorking = [];
+    if (platform === 'LOCAL') {
+        containerWorking = await LocalContainer.findByIdAndUpdate(container._id, { Working: true, Date_work_end: new Date() }, { new: true })
         .then(containerUpdated => {
             return containerUpdated;
         })
         .catch(err => {
             console.error(err);
         });
+    } else {
+        containerWorking = await AwsContainer.findByIdAndUpdate(container._id, { Working: true, Date_work_end: new Date() }, { new: true })
+        .then(containerUpdated => {
+            return containerUpdated;
+        })
+        .catch(err => {
+            console.error(err);
+        });
+    }
+
     return containerWorking;
 }
 
@@ -107,26 +197,48 @@ getRequest = async(url) => {
 }
 
 // Libera el contenedor poniendo working a false
-releaseContainer = async(container) => {
-    let containerReleased = await LocalContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date() }, { new: true })
+releaseContainer = async(container, platform) => {
+    let containerReleased = [];
+    if (platform === 'LOCAL') {
+        containerReleased = await LocalContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date() }, { new: true })
         .then(containerUpdated => {
             return containerUpdated;
         })
         .catch(err => {
             console.error(err);
         });
+    } else {
+        containerReleased = await AwsContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date() }, { new: true })
+        .then(containerUpdated => {
+            return containerUpdated;
+        })
+        .catch(err => {
+            console.error(err);
+        });
+    }
     return containerReleased;
 }
 
 // Libera el contenedor del usuario y job, tambien pone a working false
-liberateContainer = async(container) => {
-    await LocalContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date(), User_id: '', Job_id: '' }, { new: true })
+liberateContainer = async(container, platform) => {
+    if (platform === 'LOCAL') {
+        await LocalContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date(), User_id: '', Job_id: '' }, { new: true })
         .then(containerUpdated => {
             return containerUpdated;
         })
         .catch(err => {
             console.error(err);
         });
+    } else { // 'AWS'
+        await AwsContainer.findByIdAndUpdate(container._id, { Working: false, Date_work_end: new Date(), User_id: '', Job_id: '' }, { new: true })
+        .then(containerUpdated => {
+            return containerUpdated;
+        })
+        .catch(err => {
+            console.error(err);
+        });
+    }
+    
 }
 
 isCompleted = (job) => {
@@ -177,6 +289,8 @@ updateTime = async(job) => {
 
 module.exports = {
     getJobsRunning,
+    getNumberAlgorithmsWaiting,
+    updateAWSContainerLaunching,
     getContainersOwn,
     getContainersFree,
     updateContainerWorking,

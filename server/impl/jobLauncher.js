@@ -3,6 +3,8 @@ const path = require('path');
 const Job = require('../models/appDB/job');
 const {
     getJobsRunning,
+    getNumberAlgorithmsWaiting,
+    updateAWSContainerLaunching,
     getContainersOwn,
     getContainersFree,
     updateContainerWorking,
@@ -35,30 +37,34 @@ mainManagerJobLauncher = async() => {
         if (!fs.existsSync(pathFile)) {
             job.errorList.push('File does not exist.');
             job.hasStatus = 'ERROR';
-            containersOwn = await getContainersOwn(job.user.toString(), job._id.toString());
+            containersOwn = await getContainersOwn(job.user.toString(), job._id.toString(), job.platform);
+        }
+
+        if (job.platform === 'AWS') {
+            // Actualiza en BD el estado de los contenedores en aws lanzados
+            await updateAWSContainerLaunching(job.user.toString(), job._id.toString());
         }
 
 
-
-        if (job.hasStatus !== 'ERROR') {
+        if (job.hasStatus !== 'ERROR') { // && containersOwn.length > 0
 
             // Numero de algoritmos esperando.
             let numAlgorithmsWaiting = getNumberAlgorithmsWaiting(job);
 
             // if (numAlgorithmsWaiting > 0) {
-            containersOwn = await getContainersOwn(job.user.toString(), job._id.toString());
+                containersOwn = await getContainersOwn(job.user.toString(), job._id.toString(), job.platform);
 
             if (numAlgorithmsWaiting > containersOwn.length) { // Si hay más algoritmos que contenedores.
                 // Obtener contenedores si hay libres.
                 let numContainers = numAlgorithmsWaiting - containersOwn.length;
-                let containersFree = await getContainersFree(numContainers, job.user, job._id);
+                let containersFree = await getContainersFree(numContainers, job.user, job._id, job.platform);
                 containersOwn = containersOwn.concat(containersFree);
             } else if (numAlgorithmsWaiting < containersOwn.length) { // Si hay menos algoritmos que contenedores.
                 // Libero contenedores si no son necesarios.
                 let numContainers = containersOwn.length - numAlgorithmsWaiting;
                 while (numContainers > 0 && containersOwn.length > 0) {
                     let containerLiberate = containersOwn.shift();
-                    await liberateContainer(containerLiberate);
+                    await liberateContainer(containerLiberate, job.platform);
                     numContainers--;
                 }
             }
@@ -75,7 +81,7 @@ mainManagerJobLauncher = async() => {
 
                         // Asignar contenedor a algoritmo.
                         let container = containersOwn.shift();
-                        currentAlgorithm.container = await updateContainerWorking(container);
+                        currentAlgorithm.container = await updateContainerWorking(container, job.platform);
 
                         // Inicar algoritmo en ese contenedor
                         let formData = generateFormData(currentAlgorithm.algorithm.config);
@@ -88,9 +94,15 @@ mainManagerJobLauncher = async() => {
                             }
                         }
 
-                        // TODO: Llevar el http://localhost a config, variable de entorno URL_DOCKER_SERVER
-                        let promise = await postRequest(`http://localhost:${ currentAlgorithm.container.Port.PublicPort }/algorithm/${ currentAlgorithm.algorithm.endpoint }`, formData, requestConfig);
-                        if (promise.status) {
+                        let promise;
+                        if (job.platform === 'LOCAL') {
+                            promise = await postRequest(`${ process.env.URL_DOCKER_LOCAL_SERVER }:${ currentAlgorithm.container.Port.PublicPort }/algorithm/${ currentAlgorithm.algorithm.endpoint }`, formData, requestConfig);
+                        } else {
+                            promise = await postRequest(`http://${ currentAlgorithm.container.Endpoint_URL }/algorithm/${ currentAlgorithm.algorithm.endpoint }`, formData, requestConfig);
+                        }
+
+                        // let promise = await postRequest(`http://localhost:${ currentAlgorithm.container.Port.PublicPort }/algorithm/${ currentAlgorithm.algorithm.endpoint }`, formData, requestConfig);
+                        if (promise && promise.status) {
                             if (promise.status === 200 || promise.status === 201 || promise.status === 202) {
                                 currentAlgorithm.task = promise.data;
                             } else {
@@ -104,8 +116,12 @@ mainManagerJobLauncher = async() => {
                             // console.error(promise);
                             // containersWorking.push({ algorithm, container, error: promise });
                             currentAlgorithm.algorithm.errorList.push('Error with container launching algorithm.');
+                            // Release container
+                            let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
+                            containersOwn.push(containerReleased);
+                            currentAlgorithm.container = null;
                         }
-
+                        
                         // Algoritmo iniciado pero no terminado.    
                     } else if (currentAlgorithm.algorithm && currentAlgorithm.task && currentAlgorithm.container) {
 
@@ -122,13 +138,13 @@ mainManagerJobLauncher = async() => {
                                     if (taskUpdated.status === 'RUNNING') {
 
                                         // Actualiza fecha en contendor.
-                                        currentAlgorithm.container = await updateContainerWorking(currentAlgorithm.container);
+                                        currentAlgorithm.container = await updateContainerWorking(currentAlgorithm.container, job.platform);
 
                                     }
                                     if (taskUpdated.status === 'ERROR') {
 
                                         // Release container
-                                        let containerReleased = await releaseContainer(currentAlgorithm.container);
+                                        let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
                                         containersOwn.push(containerReleased);
                                         currentAlgorithm.container = null;
 
@@ -179,7 +195,7 @@ mainManagerJobLauncher = async() => {
 
 
                                                 // Release container
-                                                let containerReleased = await releaseContainer(currentAlgorithm.container);
+                                                let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
                                                 containersOwn.push(containerReleased);
                                                 currentAlgorithm.container = null;
 
@@ -188,7 +204,7 @@ mainManagerJobLauncher = async() => {
                                                 // console.error(promiseModel);
                                                 currentAlgorithm.errorList.push(promiseModel.message);
                                                 // Release container
-                                                let containerReleased = await releaseContainer(currentAlgorithm.container);
+                                                let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
                                                 containersOwn.push(containerReleased);
                                                 currentAlgorithm.container = null;
                                             }
@@ -197,7 +213,7 @@ mainManagerJobLauncher = async() => {
                                             // console.error(promiseModel);
                                             currentAlgorithm.errorList.push('Error with container getting model');
                                             // Release container
-                                            let containerReleased = await releaseContainer(currentAlgorithm.container);
+                                            let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
                                             containersOwn.push(containerReleased);
                                             currentAlgorithm.container = null;
                                         }
@@ -208,7 +224,7 @@ mainManagerJobLauncher = async() => {
                                     // console.error(promiseTask);
                                     currentAlgorithm.errorList.push(promiseTask.message);
                                     // Release container
-                                    let containerReleased = await releaseContainer(currentAlgorithm.container);
+                                    let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
                                     containersOwn.push(containerReleased);
                                     currentAlgorithm.container = null;
                                 }
@@ -217,7 +233,7 @@ mainManagerJobLauncher = async() => {
                                 // console.error(promiseTask);
                                 currentAlgorithm.algorithm.errorList.push('Error with container getting task');
                                 // Release container
-                                let containerReleased = await releaseContainer(currentAlgorithm.container);
+                                let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
                                 containersOwn.push(containerReleased);
                                 currentAlgorithm.container = null;
                             }
@@ -231,21 +247,21 @@ mainManagerJobLauncher = async() => {
         if (job.hasStatus === 'ERROR') {
             while (containersOwn.length > 0) {
                 let containerLiberate = containersOwn.shift();
-                await liberateContainer(containerLiberate);
+                await liberateContainer(containerLiberate, job.platform);
             }
             updateTime(job);
         } else if (isCompleted(job)) {
             job.hasStatus = 'COMPLETED';
             while (containersOwn.length > 0) {
                 let containerLiberate = containersOwn.shift();
-                await liberateContainer(containerLiberate);
+                await liberateContainer(containerLiberate, job.platform);
             }
             updateTime(job);
         } else if (isPartial(job)) {
             job.hasStatus = 'PARTIAL';
             while (containersOwn.length > 0) {
                 let containerLiberate = containersOwn.shift();
-                await liberateContainer(containerLiberate);
+                await liberateContainer(containerLiberate, job.platform);
             }
             updateTime(job);
         }

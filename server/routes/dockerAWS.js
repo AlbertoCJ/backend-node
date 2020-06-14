@@ -10,12 +10,15 @@ const app = express();
 
 const elasticbeanstalk = new AWS.ElasticBeanstalk();
 
-const appName = "jguwekar"; // TODO: Generar name aleatorio
+// const appName = "jguwekar"; // TODO: Generar name aleatorio
 
 
 app.post('/createWorker', verifyToken, (req, res) => {
    
   let user_id = req.user._id;
+
+  let date = new Date();
+  let appName = `jguwekar${ date.getMonth()}-${ date.getDay()}-${ date.getMilliseconds() }`;
 
   let paramsApplication = {
     ApplicationName: appName
@@ -23,7 +26,7 @@ app.post('/createWorker', verifyToken, (req, res) => {
    elasticbeanstalk.createApplication(paramsApplication, function(err, dataApplication) {
      if (err) console.log(err, err.stack); // an error occurred
      else {  // successful response
-        // console.log(dataApplication); 
+        // console.log(dataApplication); // TODO: ELIMINAR    
 
 
         let paramsApplicationVersion = {
@@ -40,7 +43,7 @@ app.post('/createWorker', verifyToken, (req, res) => {
            elasticbeanstalk.createApplicationVersion(paramsApplicationVersion, async(err, dataApplicationVersion) => {
              if (err) console.log('dataApplicationVersionErr', err, err.stack); // an error occurred
              else {     // successful response
-              // console.log('dataApplicationVersion', dataApplicationVersion); 
+              // console.log('dataApplicationVersion', dataApplicationVersion); // TODO: ELIMINAR    
 
               await delay(1000);
 
@@ -57,7 +60,7 @@ app.post('/createWorker', verifyToken, (req, res) => {
               elasticbeanstalk.createEnvironment(paramsEnvironment, function(err, dataEnvironment) {
                 if (err) console.log('dataEnvironmentErr', err, err.stack); // an error occurred
                 else {    // successful response
-                  // console.log('dataEnvironment', dataEnvironment);
+                  // console.log('dataEnvironment', dataEnvironment); // TODO: ELIMINAR    
 
 
                   let params = {
@@ -68,7 +71,7 @@ app.post('/createWorker', verifyToken, (req, res) => {
                    elasticbeanstalk.describeEnvironments(params, function(err, dataGetEnvironment) {
                      if (err) console.log(err, err.stack); // an error occurred
                      else {  // successful response
-                      // console.log(dataGetEnvironment);  
+                      // console.log(dataGetEnvironment); // TODO: ELIMINAR    
                       let dataEnv = dataGetEnvironment.Environments[0];
                       
                       let awsContainer = new AwsContainer({
@@ -114,20 +117,21 @@ app.post('/createWorker', verifyToken, (req, res) => {
 app.get('/env', verifyToken, (req, res) => {
 
   // TODO: Recibir EnvironmentNames[] por req y sustituir abajo
+  // [`${appName}-env`]
+
+  let environmentNames = req.environmentNames;
 
   let params = {
-    EnvironmentNames: [
-      `${appName}-env`
-    ]
+    EnvironmentNames: environmentNames
    };
    elasticbeanstalk.describeEnvironments(params, function(err, data) {
      if (err) console.log(err, err.stack); // an error occurred
      else {  // successful response
-      console.log(data);  
+      console.log(data); // TODO: ELIMINAR    
       
       res.json({
         ok: true,
-        data: data.Environments[0]
+        environments: data.Environments
       });
      }         
    });
@@ -136,16 +140,16 @@ app.get('/env', verifyToken, (req, res) => {
 
 app.delete('/app', verifyToken, (req, res) => {
 
-  // TODO: Recibir ApplicationName por req y sustituir abajo
+  let applicationName = req.applicationName;
 
   let params = {
-    ApplicationName: appName,
+    ApplicationName: applicationName,
     TerminateEnvByForce: true
   };
   elasticbeanstalk.deleteApplication(params, function(err, data) {
     if (err) console.log(err, err.stack); // an error occurred
     else {     // successful response
-      console.log(data);      
+      console.log(data); // TODO: ELIMINAR    
 
       res.json({
         ok: true,
