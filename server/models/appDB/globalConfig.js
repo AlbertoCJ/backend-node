@@ -11,6 +11,12 @@ let globalConfigSchema = new Schema({
             numContMaxGlobal: 10
         }
     },
+    awsContainer: {
+        type: Object,
+        default: {
+            numContMaxGlobal: 10
+        }
+    },
     showLists: {
         type: Object,
         default: {

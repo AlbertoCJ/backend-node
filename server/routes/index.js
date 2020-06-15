@@ -11,6 +11,7 @@ app.use(require('./docker'));
 app.use(require('./dockerAWS'));
 app.use(require('./globalConfig'));
 app.use(require('./localContainer'));
+app.use(require('./awsContainer'));
 app.use(require('./time'));
 
 module.exports = app;
