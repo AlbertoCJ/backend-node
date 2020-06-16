@@ -170,7 +170,6 @@ app.post('/dataset', verifyToken, (req, res) => {
         dataset.full_name = file.name;
         dataset.size = size;
         dataset.attributes = attributes;
-        console.log('entra2');
         dataset.save((err, datasetDB) => {
             if (err) {
                 return res.status(400).json({
