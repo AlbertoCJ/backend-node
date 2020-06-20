@@ -6,6 +6,7 @@ const LocalContainer = require('../models/wekaDB/localContainer');
 const AwsContainer = require('../models/wekaDB/awsContainer');
 
 const AWS = require('aws-sdk');
+const { isError } = require('underscore');
 AWS.config.update({region:'us-east-1'});
 const elasticbeanstalk = new AWS.ElasticBeanstalk();
 
@@ -30,7 +31,7 @@ getNumberAlgorithmsWaiting = (job) => {
     for (const key in dataAlgorithms) {
         if (dataAlgorithms.hasOwnProperty(key)) {
             // Si existe algoritmo y no existe ni task ni container, algoritmo esperando.
-            if (dataAlgorithms[key].algorithm && !dataAlgorithms[key].task && !dataAlgorithms[key].container) {
+            if (dataAlgorithms[key].algorithm && !dataAlgorithms[key].task && !dataAlgorithms[key].container && dataAlgorithms[key].algorithm.status === 'OK') {
                 numAlgorithmsWaiting++;
             }
         }
@@ -245,14 +246,16 @@ isCompleted = (job) => {
     let completed = true;
     let dataAlgorithms = job.dataAlgorithms;
     for (const key in dataAlgorithms) {
-        if (dataAlgorithms.hasOwnProperty(key)) {
-            if (dataAlgorithms[key].algorithm && !dataAlgorithms[key].task) {
+        if (dataAlgorithms.hasOwnProperty(key) && completed) {
+            if (dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status === 'ERROR') {
+                completed = false;
+            } else if (dataAlgorithms[key].algorithm && !dataAlgorithms[key].task) {
                 completed = false;
             } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.status !== 'COMPLETED') {
                 completed = false;
             } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.status === 'COMPLETED' && !dataAlgorithms[key].model) {
                 completed = false;
-            }
+            } 
         }
     }
     return completed;
@@ -262,17 +265,40 @@ isPartial = (job) => {
     let partial = true;
     let dataAlgorithms = job.dataAlgorithms;
     for (const key in dataAlgorithms) {
-        if (dataAlgorithms.hasOwnProperty(key)) {
-            if (dataAlgorithms[key].algorithm && !dataAlgorithms[key].task) {
+        if (dataAlgorithms.hasOwnProperty(key) && partial) {
+            if (dataAlgorithms[key].algorithm && !dataAlgorithms[key].task && dataAlgorithms[key].algorithm.status === 'ok') {
                 partial = false;
             } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.status !== 'COMPLETED' && dataAlgorithms[key].task.status !== 'ERROR') {
                 partial = false;
             } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.status === 'COMPLETED' && !dataAlgorithms[key].model) {
                 partial = false;
             }
+
+            // if (dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status === 'ERROR') {
+            //     partial = true;
+            // } else if(dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status === 'OK' && dataAlgorithms[key].task && dataAlgorithms[key].task.status === 'COMPLETED' && dataAlgorithms[key].model) {
+            //     partial = true;
+            // } else {
+            //     partial = false;
+            // }
         }
     }
     return partial;
+}
+
+isFullError = (job) => {
+    let error = true;
+    let dataAlgorithms = job.dataAlgorithms;
+    for (const key in dataAlgorithms) {
+        if (dataAlgorithms.hasOwnProperty(key) && error) {
+            if (dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status === 'ERROR') {
+                error = true;
+            } else {
+                error = false;
+            }
+        }
+    }
+    return error;
 }
 
 // Actualizar time al finalizar job
@@ -301,5 +327,6 @@ module.exports = {
     liberateContainer,
     isCompleted,
     isPartial,
+    isFullError,
     updateTime
 }

@@ -6,6 +6,7 @@ const LocalContainer = require('../models/wekaDB/localContainer');
 const AWS = require('aws-sdk');
 AWS.config.update({region:'us-east-1'});
 const AwsContainer = require('../models/wekaDB/awsContainer');
+const delay = require('delay');
 
 const elasticbeanstalk = new AWS.ElasticBeanstalk();
 
@@ -41,24 +42,26 @@ const cronJobTask = new CronJob(`0 */${process.env.TIME_TO_RUN_CRONJOB} * * * *`
         return;
     });
 
-    await AwsContainer.find({}, (err, listContainers) => {
+    await AwsContainer.find({}, async(err, listContainers) => {
         if (err) {}
         if (listContainers) {
             if (listContainers.length <= 0) {
                 thereAreAwsContainers = false;
             } else {
                 thereAreAwsContainers = true;
-                listContainers.forEach((container) => {
+                listContainers.forEach( async(container) => {
                     const date_work_end = moment(container.Date_work_end, "YYYY-MM-DD HH:mm:ss");
                     const date_now = moment(new Date(), "YYYY-MM-DD HH:mm:ss");
                     const diff = date_now.diff(date_work_end, 'm'); // Diff in minutes
                     if (diff >= process.env.TIME_TO_REMOVE_CONTAINERS) { // Mas de 5 mín
-                        AwsContainer.deleteMany({ Id: container.Id }, function(err) {});
+                        // AwsContainer.deleteMany({ Id: container.Id }, function(err) {});
+                        AwsContainer.deleteOne({ Id: container.Id }, function(err) {});
                         let params = {
                             ApplicationName: container.Application_name,
                             TerminateEnvByForce: true
                         };
                         elasticbeanstalk.deleteApplication(params, function(err, data) {});
+                        await delay(100);
                     }
                 });
             }

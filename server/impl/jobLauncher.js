@@ -15,6 +15,7 @@ const {
     liberateContainer,
     isCompleted,
     isPartial,
+    isFullError,
     updateTime
 } = require('./jobLauncherImpl');
 const FormData = require('form-data');
@@ -76,8 +77,8 @@ mainManagerJobLauncher = async() => {
 
                     let currentAlgorithm = job.dataAlgorithms[key];
 
-                    // Si algoritmo no ha sido iniciado.
-                    if (currentAlgorithm.algorithm && !currentAlgorithm.task && !currentAlgorithm.container && containersOwn.length > 0) {
+                    // Si algoritmo no ha sido iniciado y no contiene error.
+                    if (currentAlgorithm.algorithm && !currentAlgorithm.task && !currentAlgorithm.container && containersOwn.length > 0 && currentAlgorithm.algorithm.status === 'OK') {
 
                         // Asignar contenedor a algoritmo.
                         let container = containersOwn.shift();
@@ -98,6 +99,7 @@ mainManagerJobLauncher = async() => {
                         if (job.platform === 'LOCAL') {
                             promise = await postRequest(`${ process.env.URL_DOCKER_LOCAL_SERVER }:${ currentAlgorithm.container.Port.PublicPort }/algorithm/${ currentAlgorithm.algorithm.endpoint }`, formData, requestConfig);
                         } else {
+                            console.log(`http://${ currentAlgorithm.container.Endpoint_URL }/algorithm/${ currentAlgorithm.algorithm.endpoint }`); // TODO: Eliminar
                             promise = await postRequest(`http://${ currentAlgorithm.container.Endpoint_URL }/algorithm/${ currentAlgorithm.algorithm.endpoint }`, formData, requestConfig);
                         }
 
@@ -109,6 +111,11 @@ mainManagerJobLauncher = async() => {
                                 // currentAlgorithm.task = promise.data;
                                 // TODO: Este error se almacenara en el array de error del algoritmo.
                                 currentAlgorithm.algorithm.errorList.push(promise.message);
+                                currentAlgorithm.algorithm.status = 'ERROR';
+                                // Release container
+                                let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
+                                containersOwn.push(containerReleased);
+                                currentAlgorithm.container = null;
                             }
 
                         } else {
@@ -116,17 +123,19 @@ mainManagerJobLauncher = async() => {
                             // console.error(promise);
                             // containersWorking.push({ algorithm, container, error: promise });
                             currentAlgorithm.algorithm.errorList.push('Error with container launching algorithm.');
+                            currentAlgorithm.algorithm.status = 'ERROR';
                             // Release container
                             let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
                             containersOwn.push(containerReleased);
                             currentAlgorithm.container = null;
                         }
                         
-                        // Algoritmo iniciado pero no terminado.    
-                    } else if (currentAlgorithm.algorithm && currentAlgorithm.task && currentAlgorithm.container) {
+                        // Algoritmo iniciado pero no terminado y no contiene error.    
+                    } else if (currentAlgorithm.algorithm && currentAlgorithm.task && currentAlgorithm.container && currentAlgorithm.algorithm.status === 'OK') {
 
                         let task = currentAlgorithm.task;
                         if (task) {
+                            console.log(task.uri); // TODO: Eliminar
                             let promiseTask = await getRequest(task.uri);
                             if (promiseTask.status) {
                                 if (promiseTask.status === 200 || promiseTask.status === 201 || promiseTask.status === 202) {
@@ -140,16 +149,15 @@ mainManagerJobLauncher = async() => {
                                         // Actualiza fecha en contendor.
                                         currentAlgorithm.container = await updateContainerWorking(currentAlgorithm.container, job.platform);
 
-                                    }
-                                    if (taskUpdated.status === 'ERROR') {
-
+                                    } else if (taskUpdated.status === 'ERROR') {
+                                        currentAlgorithm.algorithm.errorList.push('Error with the algorithm execution task.');
+                                        currentAlgorithm.algorithm.status = 'ERROR';
                                         // Release container
                                         let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
                                         containersOwn.push(containerReleased);
                                         currentAlgorithm.container = null;
 
-                                    }
-                                    if (task.status === 'COMPLETED') { // && task.percentageCompleted === 100
+                                    } else if (task.status === 'COMPLETED') { // && task.percentageCompleted === 100
 
                                         // Obtener modelo
                                         let promiseModel = await getRequest(task.resultURI);
@@ -184,6 +192,7 @@ mainManagerJobLauncher = async() => {
                                                         // currentAlgorithm.task = promise.data;
                                                         // TODO: Este error se almacenara en el array de error del algoritmo.
                                                         currentAlgorithm.algorithm.errorList.push(promisePrediction.message);
+                                                        currentAlgorithm.algorithm.status = 'ERROR';
                                                     }
 
                                                 } else {
@@ -191,6 +200,7 @@ mainManagerJobLauncher = async() => {
                                                     // console.error(promise);
                                                     // containersWorking.push({ algorithm, container, error: promise });
                                                     currentAlgorithm.algorithm.errorList.push('Error with container getting prediction.');
+                                                    currentAlgorithm.algorithm.status = 'ERROR';
                                                 }
 
 
@@ -203,6 +213,7 @@ mainManagerJobLauncher = async() => {
                                                 // TODO: ¿Que hacer con este error? Guardar model como viene
                                                 // console.error(promiseModel);
                                                 currentAlgorithm.errorList.push(promiseModel.message);
+                                                currentAlgorithm.algorithm.status = 'ERROR';
                                                 // Release container
                                                 let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
                                                 containersOwn.push(containerReleased);
@@ -212,6 +223,7 @@ mainManagerJobLauncher = async() => {
                                             // TODO: ¿Que hacer con este error? Crear un objeto model del estilo de error de la api, y guardarlo en model
                                             // console.error(promiseModel);
                                             currentAlgorithm.errorList.push('Error with container getting model');
+                                            currentAlgorithm.algorithm.status = 'ERROR';
                                             // Release container
                                             let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
                                             containersOwn.push(containerReleased);
@@ -223,6 +235,7 @@ mainManagerJobLauncher = async() => {
                                     // TODO: ¿Que hacer con este error? Guardar task como viene
                                     // console.error(promiseTask);
                                     currentAlgorithm.errorList.push(promiseTask.message);
+                                    currentAlgorithm.algorithm.status = 'ERROR';
                                     // Release container
                                     let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
                                     containersOwn.push(containerReleased);
@@ -232,6 +245,7 @@ mainManagerJobLauncher = async() => {
                                 // TODO: ¿Que hacer con este error? Crear un objeto task del estilo de error de la api, y guardarlo en task
                                 // console.error(promiseTask);
                                 currentAlgorithm.algorithm.errorList.push('Error with container getting task');
+                                currentAlgorithm.algorithm.status = 'ERROR';
                                 // Release container
                                 let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);
                                 containersOwn.push(containerReleased);
@@ -244,7 +258,8 @@ mainManagerJobLauncher = async() => {
         }
 
         // Comprobar estado de los algoritmos para finalizar el jobs con los estados, COMPLETED o ERROR.
-        if (job.hasStatus === 'ERROR') {
+        if (job.hasStatus === 'ERROR' || isFullError(job)) {
+            job.hasStatus = 'ERROR';
             while (containersOwn.length > 0) {
                 let containerLiberate = containersOwn.shift();
                 await liberateContainer(containerLiberate, job.platform);
