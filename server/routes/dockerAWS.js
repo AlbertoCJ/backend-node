@@ -10,9 +10,6 @@ const app = express();
 
 const elasticbeanstalk = new AWS.ElasticBeanstalk();
 
-// const appName = "jguwekar"; // TODO: Generar name aleatorio
-
-
 app.post('/createWorker', verifyToken, (req, res) => {
    
   let user_id = req.user._id;
@@ -24,10 +21,13 @@ app.post('/createWorker', verifyToken, (req, res) => {
     ApplicationName: appName
    };
    elasticbeanstalk.createApplication(paramsApplication, function(err, dataApplication) {
-     if (err) console.log(err, err.stack); // an error occurred
+     if (err) { // an error occurred
+      return res.status(500).json({
+        ok: false,
+        err
+      });
+     } 
      else {  // successful response
-        // console.log(dataApplication); // TODO: ELIMINAR    
-
 
         let paramsApplicationVersion = {
           ApplicationName: appName, 
@@ -41,9 +41,12 @@ app.post('/createWorker', verifyToken, (req, res) => {
           VersionLabel: "v1"
          };
            elasticbeanstalk.createApplicationVersion(paramsApplicationVersion, async(err, dataApplicationVersion) => {
-             if (err) console.log('dataApplicationVersionErr', err, err.stack); // an error occurred
-             else {     // successful response
-              // console.log('dataApplicationVersion', dataApplicationVersion); // TODO: ELIMINAR    
+             if (err) {  // an error occurred
+              return res.status(500).json({
+                ok: false,
+                err
+              });
+             }  else {     // successful response
 
               await delay(1000);
 
@@ -58,20 +61,26 @@ app.post('/createWorker', verifyToken, (req, res) => {
                 VersionLabel: "v1"
               };
               elasticbeanstalk.createEnvironment(paramsEnvironment, function(err, dataEnvironment) {
-                if (err) console.log('dataEnvironmentErr', err, err.stack); // an error occurred
-                else {    // successful response
-                  // console.log('dataEnvironment', dataEnvironment); // TODO: ELIMINAR    
-
-
+                if (err) { // an error occurred
+                  return res.status(500).json({
+                    ok: false,
+                    err
+                  });
+                } else {    // successful response
+ 
                   let params = {
                     EnvironmentNames: [
                       `${appName}-env`
                     ]
                    };
                    elasticbeanstalk.describeEnvironments(params, function(err, dataGetEnvironment) {
-                     if (err) console.log(err, err.stack); // an error occurred
-                     else {  // successful response
-                      // console.log(dataGetEnvironment); // TODO: ELIMINAR    
+                     if (err) {  // an error occurred
+                      return res.status(500).json({
+                        ok: false,
+                        err
+                      });
+                     } else {  // successful response
+  
                       let dataEnv = dataGetEnvironment.Environments[0];
                       
                       let awsContainer = new AwsContainer({
@@ -125,10 +134,12 @@ app.get('/env', verifyToken, (req, res) => {
     EnvironmentNames: environmentNames
    };
    elasticbeanstalk.describeEnvironments(params, function(err, data) {
-     if (err) console.log(err, err.stack); // an error occurred
-     else {  // successful response
-      console.log(data); // TODO: ELIMINAR    
-      
+     if (err) { // an error occurred
+      return res.status(500).json({
+        ok: false,
+        err
+      });
+     } else {  // successful response      
       res.json({
         ok: true,
         environments: data.Environments
@@ -147,10 +158,12 @@ app.delete('/app', verifyToken, (req, res) => {
     TerminateEnvByForce: true
   };
   elasticbeanstalk.deleteApplication(params, function(err, data) {
-    if (err) console.log(err, err.stack); // an error occurred
-    else {     // successful response
-      console.log(data); // TODO: ELIMINAR    
-
+    if (err) {
+      return res.status(500).json({
+        ok: false,
+        err
+      });
+    } else {     // successful response
       res.json({
         ok: true,
         data
