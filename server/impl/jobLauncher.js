@@ -99,7 +99,7 @@ mainManagerJobLauncher = async() => {
                         if (job.platform === 'LOCAL') {
                             promise = await postRequest(`${ process.env.URL_DOCKER_LOCAL_SERVER }:${ currentAlgorithm.container.Port.PublicPort }/algorithm/${ currentAlgorithm.algorithm.endpoint }`, formData, requestConfig);
                         } else {
-                            console.log(`http://${ currentAlgorithm.container.Endpoint_URL }/algorithm/${ currentAlgorithm.algorithm.endpoint }`); // TODO: Eliminar
+                            // console.log(`http://${ currentAlgorithm.container.Endpoint_URL }/algorithm/${ currentAlgorithm.algorithm.endpoint }`); // TODO: Eliminar
                             promise = await postRequest(`http://${ currentAlgorithm.container.Endpoint_URL }/algorithm/${ currentAlgorithm.algorithm.endpoint }`, formData, requestConfig);
                         }
 
@@ -135,7 +135,7 @@ mainManagerJobLauncher = async() => {
 
                         let task = currentAlgorithm.task;
                         if (task) {
-                            console.log(task.uri); // TODO: Eliminar
+                            // console.log(task.uri); // TODO: Eliminar
                             let promiseTask = await getRequest(task.uri);
                             if (promiseTask.status) {
                                 if (promiseTask.status === 200 || promiseTask.status === 201 || promiseTask.status === 202) {

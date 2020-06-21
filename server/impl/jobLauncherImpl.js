@@ -266,21 +266,21 @@ isPartial = (job) => {
     let dataAlgorithms = job.dataAlgorithms;
     for (const key in dataAlgorithms) {
         if (dataAlgorithms.hasOwnProperty(key) && partial) {
-            if (dataAlgorithms[key].algorithm && !dataAlgorithms[key].task && dataAlgorithms[key].algorithm.status === 'ok') {
-                partial = false;
-            } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.status !== 'COMPLETED' && dataAlgorithms[key].task.status !== 'ERROR') {
-                partial = false;
-            } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.status === 'COMPLETED' && !dataAlgorithms[key].model) {
-                partial = false;
-            }
-
-            // if (dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status === 'ERROR') {
-            //     partial = true;
-            // } else if(dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status === 'OK' && dataAlgorithms[key].task && dataAlgorithms[key].task.status === 'COMPLETED' && dataAlgorithms[key].model) {
-            //     partial = true;
-            // } else {
+            // if (dataAlgorithms[key].algorithm && !dataAlgorithms[key].task && dataAlgorithms[key].algorithm.status === 'ok') {
+            //     partial = false;
+            // } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.status !== 'COMPLETED' && dataAlgorithms[key].task.status !== 'ERROR') {
+            //     partial = false;
+            // } else if (dataAlgorithms[key].task && dataAlgorithms[key].task.status === 'COMPLETED' && !dataAlgorithms[key].model) {
             //     partial = false;
             // }
+
+            if (dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status === 'ERROR') {
+                partial = true;
+            } else if(dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status === 'OK' && dataAlgorithms[key].task && dataAlgorithms[key].task.status === 'COMPLETED' && dataAlgorithms[key].model) {
+                partial = true;
+            } else {
+                partial = false;
+            }
         }
     }
     return partial;
