@@ -10,10 +10,6 @@ const app = express();
 // default options
 app.use(fileUpload());
 
-// TODO: Eliminar y pasar a job finish
-const { sendEmail } = require('../mail/nodemailer');
-
-
 app.get('/dataset', verifyToken, (req, res) => {
 
     let page = req.query.page || 1;
@@ -97,10 +93,6 @@ app.post('/dataset/download', verifyToken, (req, res) => {
                 message: 'Error to download dataset.'
             });
         }
-        //TODO: Prueba de email, pasar a job finish
-        sendEmail('berserkacj@hotmail.com', 'Job Terminado', 'El Job Borrrarar ha sido completado correctamente.');
-
-
     });
 });
 

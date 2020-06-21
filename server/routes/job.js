@@ -232,7 +232,8 @@ app.post('/job', verifyToken, async(req, res) => {
             user: user_id,
             fileName,
             time: timeDB._id,
-            platform
+            platform,
+            userEmail: req.user.email
         });
 
         job.save(async(err, jobDB) => {

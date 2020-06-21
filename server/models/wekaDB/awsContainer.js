@@ -17,7 +17,7 @@ let awsContainerSchema = new Schema({
         type: String // 'Unknown', 'pending', 'OK'
     },
     Status: {
-        type: Object // 'Launching', 'Ready', 'Terminating', 'Terminated'
+        type: String // 'Launching', 'Updating', 'Ready', 'Terminating', 'Terminated'
     },
     Endpoint_URL: {
         type: String

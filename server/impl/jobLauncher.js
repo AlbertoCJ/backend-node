@@ -20,6 +20,8 @@ const {
 } = require('./jobLauncherImpl');
 const FormData = require('form-data');
 
+const { sendEmail } = require('../mail/nodemailer');
+
 mainManagerJobLauncher = async() => {
 
     console.log('Init');
@@ -265,6 +267,7 @@ mainManagerJobLauncher = async() => {
                 await liberateContainer(containerLiberate, job.platform);
             }
             updateTime(job);
+            sendEmail(job.userEmail, `Job ${ job.name } Finished`, `Job ${ job.name } has been completed with errors.`);
         } else if (isCompleted(job)) {
             job.hasStatus = 'COMPLETED';
             while (containersOwn.length > 0) {
@@ -272,6 +275,7 @@ mainManagerJobLauncher = async() => {
                 await liberateContainer(containerLiberate, job.platform);
             }
             updateTime(job);
+            sendEmail(job.userEmail, `Job ${ job.name } Finished`, `Job ${ job.name } has been successfully completed.`);
         } else if (isPartial(job)) {
             job.hasStatus = 'PARTIAL';
             while (containersOwn.length > 0) {
@@ -279,6 +283,7 @@ mainManagerJobLauncher = async() => {
                 await liberateContainer(containerLiberate, job.platform);
             }
             updateTime(job);
+            sendEmail(job.userEmail, `Job ${ job.name } Finished`, `Job ${ job.name } has been partially completed.`);
         }
 
         console.log('final job'); // TODO: PARA PROBAR

@@ -43,6 +43,10 @@ let jobSchema = new Schema({
     platform: {
         type: String,
         default: null // 'LOCAL' o 'AWS'
+    },
+    userEmail: {
+        type: String,
+        default: null
     }
 });
 
