@@ -60,11 +60,13 @@ app.get('/user/:id', verifyToken, (req, res) => {
 })
 
 app.post('/user', (req, res) => {
-    let body = _.pick(req.body, ['name', 'email', 'password', 'state']); // Undercore library
+    
+    let body = _.pick(req.body, ['name', 'email', 'sendEmail', 'password', 'state']); // Undercore library
 
     let user = new User({
         name: body.name,
         email: body.email,
+        sendEmail: body.sendEmail,
         password: bcrypt.hashSync(body.password, 10),
         state: body.state
     });
@@ -87,7 +89,7 @@ app.post('/user', (req, res) => {
 app.put('/user/:id', verifyToken, (req, res) => {
 
     let id = req.params.id;
-    let body = _.pick(req.body, ['name', 'email', 'state']); // Undercore library 
+    let body = _.pick(req.body, ['name', 'email', 'sendEmail', 'state']); // Undercore library 
 
     User.findByIdAndUpdate(id, body, { new: true, runValidators: true }, (err, userDB) => {
 

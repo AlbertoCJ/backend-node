@@ -20,6 +20,10 @@ let userSchema = new Schema({
         unique: true,
         required: [true, 'El correo es necesario']
     },
+    sendEmail: {
+        type: Boolean,
+        default: false
+    },
     password: {
         type: String,
         required: [true, 'La contraseña es obligatoria']

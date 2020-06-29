@@ -47,6 +47,10 @@ let jobSchema = new Schema({
     userEmail: {
         type: String,
         default: null
+    },
+    sendEmail: {
+        type: Boolean,
+        default: false
     }
 });
 

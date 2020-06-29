@@ -267,7 +267,7 @@ mainManagerJobLauncher = async() => {
                 await liberateContainer(containerLiberate, job.platform);
             }
             updateTime(job);
-            sendEmail(job.userEmail, `Job ${ job.name } Finished`, `Job ${ job.name } has been completed with errors.`);
+            if (job.sendEmail) sendEmail(job.userEmail, `Job ${ job.name } Done`, `Job ${ job.name } has been completed with errors.`);
         } else if (isCompleted(job)) {
             job.hasStatus = 'COMPLETED';
             while (containersOwn.length > 0) {
@@ -275,7 +275,7 @@ mainManagerJobLauncher = async() => {
                 await liberateContainer(containerLiberate, job.platform);
             }
             updateTime(job);
-            sendEmail(job.userEmail, `Job ${ job.name } Finished`, `Job ${ job.name } has been successfully completed.`);
+            if (job.sendEmail) sendEmail(job.userEmail, `Job ${ job.name } Done`, `Job ${ job.name } has been successfully completed.`);
         } else if (isPartial(job)) {
             job.hasStatus = 'PARTIAL';
             while (containersOwn.length > 0) {
@@ -283,7 +283,7 @@ mainManagerJobLauncher = async() => {
                 await liberateContainer(containerLiberate, job.platform);
             }
             updateTime(job);
-            sendEmail(job.userEmail, `Job ${ job.name } Finished`, `Job ${ job.name } has been partially completed.`);
+            if (job.sendEmail) sendEmail(job.userEmail, `Job ${ job.name } Done`, `Job ${ job.name } has been partially completed.`);
         }
 
         console.log('final job'); // TODO: PARA PROBAR
