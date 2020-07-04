@@ -130,9 +130,12 @@ app.get('/env', verifyToken, (req, res) => {
 
   let environmentNames = req.environmentNames;
 
-  let params = {
-    EnvironmentNames: environmentNames
-   };
+  let params = {};
+
+  if (environmentNames) {
+    params.EnvironmentNames = environmentNames;
+  }
+
    elasticbeanstalk.describeEnvironments(params, function(err, data) {
      if (err) { // an error occurred
       return res.status(500).json({
@@ -151,12 +154,13 @@ app.get('/env', verifyToken, (req, res) => {
 
 app.delete('/app', verifyToken, (req, res) => {
 
-  let applicationName = req.applicationName;
+  let applicationName = req.query.applicationName;
 
   let params = {
     ApplicationName: applicationName,
     TerminateEnvByForce: true
   };
+
   elasticbeanstalk.deleteApplication(params, function(err, data) {
     if (err) {
       return res.status(500).json({
