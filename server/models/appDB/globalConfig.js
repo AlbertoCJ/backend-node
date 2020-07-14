@@ -8,13 +8,15 @@ let globalConfigSchema = new Schema({
     localContainer: {
         type: Object,
         default: {
-            numContMaxGlobal: 10
+            numContMaxGlobal: 10,
+            localActivated: true
         }
     },
     awsContainer: {
         type: Object,
         default: {
-            numContMaxGlobal: 10
+            numContMaxGlobal: 10,
+            awsActivated: true
         }
     },
     showLists: {
