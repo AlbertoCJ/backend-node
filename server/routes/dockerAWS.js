@@ -125,7 +125,6 @@ app.post('/createWorker', verifyToken, (req, res) => {
 
 app.get('/env', verifyToken, (req, res) => {
 
-  // TODO: Recibir EnvironmentNames[] por req y sustituir abajo
   // [`${appName}-env`]
 
   let environmentNames = req.environmentNames;

@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-// const uniqueValidator = require('mongoose-unique-validator');
 const mongoosePaginate = require('mongoose-paginate-v2');
 const appDB = require('../../connectionsDB').appDB;
 
@@ -55,7 +54,6 @@ userSchema.methods.toJSON = function() {
     return userObject;
 }
 
-// userSchema.plugin(uniqueValidator, { message: '{PATH} debe ser único' });
 userSchema.plugin(mongoosePaginate);
 
 module.exports = appDB.model('User', userSchema);

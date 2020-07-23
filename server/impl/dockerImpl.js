@@ -1,7 +1,5 @@
 const LocalContainer = require('../models/wekaDB/localContainer');
 const GlobalConfig = require('../models/appDB/globalConfig');
-// const Docker = require('dockerode');
-// const docker = new Docker({ host: 'localhost', port: 2375 });
 
 getNumContMaxGlobal = async() => {
     let numContMaxGlobal = await GlobalConfig.find({}, (err, globalConfigDB) => {

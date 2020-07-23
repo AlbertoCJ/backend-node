@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-// const uniqueValidator = require('mongoose-unique-validator');
 const wekaDB = require('../../connectionsDB').wekaDB;
 
 let Schema = mongoose.Schema;
