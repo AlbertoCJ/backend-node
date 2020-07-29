@@ -6,6 +6,10 @@ const _ = require('underscore');
 const fs = require('fs');
 const path = require('path');
 const app = express();
+const AWS = require('aws-sdk');
+AWS.config.update({region:'us-east-1'});
+
+const s3 = new AWS.S3();
 
 // default options
 app.use(fileUpload());
@@ -64,37 +68,37 @@ app.get('/dataset/:id', verifyToken, (req, res) => {
 
 });
 
-app.post('/dataset/download', verifyToken, (req, res) => {
+// app.post('/dataset/download', verifyToken, (req, res) => {
 
-    let fileName = req.body.fileName;
-    if (!fileName) {
-        return res.status(400).json({
-            ok: false,
-            message: 'You must pass a fileName.'
-        });
-    }
-    let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileName }`);
-    if (!fs.existsSync(pathFile)) {
-        return res.status(400).json({
-            ok: false,
-            message: 'File does not exist.'
-        });
-    }
+//     let fileName = req.body.fileName;
+//     if (!fileName) {
+//         return res.status(400).json({
+//             ok: false,
+//             message: 'You must pass a fileName.'
+//         });
+//     }
+//     let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileName }`);
+//     if (!fs.existsSync(pathFile)) {
+//         return res.status(400).json({
+//             ok: false,
+//             message: 'File does not exist.'
+//         });
+//     }
 
-    let originalName = req.body.originalName;
-    if (!originalName) {
-        originalName = fileName;
-    }
+//     let originalName = req.body.originalName;
+//     if (!originalName) {
+//         originalName = fileName;
+//     }
 
-    res.download(pathFile, originalName, (err) => {
-        if (err) {
-            return res.status(400).json({
-                ok: false,
-                message: 'Error to download dataset.'
-            });
-        }
-    });
-});
+//     res.download(pathFile, originalName, (err) => {
+//         if (err) {
+//             return res.status(400).json({
+//                 ok: false,
+//                 message: 'Error to download dataset.'
+//             });
+//         }
+//     });
+// });
 
 app.post('/dataset', verifyToken, (req, res) => {
 
@@ -135,49 +139,136 @@ app.post('/dataset', verifyToken, (req, res) => {
     let date = new Date();
     let fileNameCustom = `${ fileNameSplit[0] }-${ date.getMonth()}-${ date.getDay()}-${ date.getMilliseconds() }.${ extension }`;
 
-    file.mv(`${ process.env.PATH_FILES_DATASET }/${ fileNameCustom }`, (err) => {
-        if (err)
+    let pathSaveFile = 'uploads/filesDatasets';
+
+    file.mv(`${ pathSaveFile }/${ fileNameCustom }`, (err) => {
+        if (err) {
             return res.status(500).json({
                 ok: false,
                 err
             });
+        }
 
-        let attributes = [];
-        let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileNameCustom }`);
-        let data = fs.readFileSync(pathFile, 'utf-8');
-        let sentences = data.split('\n');
-        sentences.forEach(line => {
-            if (line.match(/@attribute/)) {
-                let words = line.split(' ');
-                words.shift();
-                let newLine = words.join(' ');
-                attributes.push(newLine);
-            }
-        });
-
-        dataset.file = fileNameCustom;
-        dataset.extension = extensionsAllowed;
-        dataset.date_creation = date;
-        dataset.name = name;
-        dataset.full_name = file.name;
-        dataset.size = size;
-        dataset.attributes = attributes;
-        dataset.save((err, datasetDB) => {
+        var params = {Bucket: `${ process.env.BUCKET_AWS_S3 }`, Key: fileNameCustom, Body: file.data, ACL: "public-read"};
+        s3.upload(params, function(err, data) {  
             if (err) {
-                return res.status(400).json({
+                return res.status(500).json({
                     ok: false,
                     err
                 });
             }
+            // let attributes = [];
+            // let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileNameCustom }`);
+            // let pathFile = data.Location;
+            // let dataFile = fs.readFileSync(file.data, 'utf-8');
+            // let dataFile = fs.readFileSync(file, 'utf-8');
+            // let sentences = dataFile.split('\n');
+            // let finished = false;
+            // for (let i=0; i < sentences.length && !finished; i++) {
+            //     if (line.match(/@/) || line.match(/%/)) {
+            //         console.log(line);
+            //         if (line.match(/@attribute/)) {
+            //             let words = line.split(' ');
+            //             words.shift();
+            //             let newLine = words.join(' ');
+            //             attributes.push(newLine);
+            //         }
+            //     } else {
+            //         finished = true;
+            //     }
+            // }
+            // sentences.forEach(line => {
+            //     if (line.match(/@attribute/)) {
+            //         let words = line.split(' ');
+            //         words.shift();
+            //         let newLine = words.join(' ');
+            //         attributes.push(newLine);
+            //     }
+            // });
 
-            res.json({
-                ok: true,
-                dataset: datasetDB,
-                file_name: fileNameCustom,
-                message: `File ${ fileNameCustom } uploaded!`
+            let attributes = [];
+            let pathFile = path.resolve(__dirname, `../../${ pathSaveFile }/${ fileNameCustom }`);
+            let dataFile = fs.readFileSync(pathFile, 'utf-8');
+            let sentences = dataFile.split('\n');
+            sentences.forEach(line => {
+                if (line.match(/@attribute/)) {
+                    let words = line.split(' ');
+                    words.shift();
+                    let newLine = words.join(' ');
+                    attributes.push(newLine);
+                }
             });
+
+            dataset.file = fileNameCustom;
+            dataset.extension = extensionsAllowed;
+            dataset.date_creation = date;
+            dataset.name = name;
+            dataset.full_name = file.name;
+            dataset.size = size;
+            dataset.attributes = attributes;
+            dataset.locationS3 = data.Location;
+            dataset.save((err, datasetDB) => {
+                if (err) {
+                    return res.status(400).json({
+                        ok: false,
+                        err
+                    });
+                }
+
+                res.json({
+                    ok: true,
+                    dataset: datasetDB,
+                    file_name: fileNameCustom,
+                    message: `File ${ fileNameCustom } uploaded!`
+                });
+            });
+
         });
     });
+
+    // file.mv(`${ process.env.PATH_FILES_DATASET }/${ fileNameCustom }`, (err) => {
+    //     if (err)
+    //         return res.status(500).json({
+    //             ok: false,
+    //             err
+    //         });
+
+    //     let attributes = [];
+    //     let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileNameCustom }`);
+    //     let data = fs.readFileSync(pathFile, 'utf-8');
+    //     let sentences = data.split('\n');
+    //     sentences.forEach(line => {
+    //         if (line.match(/@attribute/)) {
+    //             let words = line.split(' ');
+    //             words.shift();
+    //             let newLine = words.join(' ');
+    //             attributes.push(newLine);
+    //         }
+    //     });
+
+    //     dataset.file = fileNameCustom;
+    //     dataset.extension = extensionsAllowed;
+    //     dataset.date_creation = date;
+    //     dataset.name = name;
+    //     dataset.full_name = file.name;
+    //     dataset.size = size;
+    //     dataset.attributes = attributes;
+    //     dataset.save((err, datasetDB) => {
+    //         if (err) {
+    //             return res.status(400).json({
+    //                 ok: false,
+    //                 err
+    //             });
+    //         }
+
+    //         res.json({
+    //             ok: true,
+    //             dataset: datasetDB,
+    //             file_name: fileNameCustom,
+    //             message: `File ${ fileNameCustom } uploaded!`
+    //         });
+    //     });
+    // });
 });
 
 app.put('/dataset/:id', verifyToken, (req, res) => {
@@ -224,19 +315,32 @@ app.delete('/dataset/:id', verifyToken, (req, res) => {
 
         let fileExist = false;
         let fileDeleted = false;
-        let pathFileDataset = path.resolve(__dirname, `../../${ process.env.PATH_FILES_DATASET }/${ datasetRemoved.file }`);
-        if (fs.existsSync(pathFileDataset)) {
-            fs.unlinkSync(pathFileDataset);
-            fileExist = true;
-            fileDeleted = true;
-        }
+        // let pathFileDataset = path.resolve(__dirname, `../../${ process.env.PATH_FILES_DATASET }/${ datasetRemoved.file }`);
+        // if (fs.existsSync(pathFileDataset)) {
+        //     fs.unlinkSync(pathFileDataset);
+        //     fileExist = true;
+        //     fileDeleted = true;
+        // }
 
-        res.json({
-            ok: true,
-            dataset: datasetRemoved,
-            file_exist: fileExist,
-            file_deleted: fileDeleted
+        var params = {
+            Bucket: `${ process.env.BUCKET_AWS_S3 }`, 
+            Key: datasetRemoved.file
+           };
+        s3.deleteObject(params, function(err, data) {
+            if (!err) {
+                fileExist = true;
+                fileDeleted = true;
+            }
+           
+            res.json({
+                ok: true,
+                dataset: datasetRemoved,
+                file_exist: fileExist,
+                file_deleted: fileDeleted
+            });
         });
+
+      
     });
 });
 

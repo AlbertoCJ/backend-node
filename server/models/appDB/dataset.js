@@ -36,6 +36,9 @@ let datasetSchema = new Schema({
     attributes: {
         type: Array,
         default: []
+    },
+    locationS3: {
+        type: String
     }
 });
 

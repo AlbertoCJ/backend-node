@@ -20,6 +20,10 @@ const {
 
 const { cronJobTask } = require('../cron/cronJobs');
 
+const AWS = require('aws-sdk');
+AWS.config.update({region:'us-east-1'});
+
+const s3 = new AWS.S3();
 
 app.get('/job', verifyToken, (req, res) => {
 
@@ -174,90 +178,109 @@ app.post('/job', verifyToken, async(req, res) => {
             message: 'You must pass a fileName.'
         });
     }
-    let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileName }`);
-    if (!fs.existsSync(pathFile)) {
-        while (containers.length > 0) {
-            let containerLiberate = containers.shift();
-            await liberateContainer(containerLiberate, platform);
-        }
-        return res.status(404).json({
-            ok: false,
-            message: 'File does not exist.'
-        });
-    }
+    // let pathFile = path.resolve(__dirname, `../../${process.env.PATH_FILES_DATASET}/${ fileName }`);
+    // if (!fs.existsSync(pathFile)) {
+    //     while (containers.length > 0) {
+    //         let containerLiberate = containers.shift();
+    //         await liberateContainer(containerLiberate, platform);
+    //     }
+    //     return res.status(404).json({
+    //         ok: false,
+    //         message: 'File does not exist.'
+    //     });
+    // }
 
-    let jobName = req.body.jobName;
-    if (!jobName) {
-        res.message = 'You must pass a jobName.';
-        return res.status(400).json({
-            ok: false,
-            message: 'You must pass a jobName.'
-        });
-    }
-    let jobDescription = req.body.jobDescription || '';
-
-    let algorithms = JSON.parse(req.body.algorithms);
-    if (!algorithms) {
-        return res.status(400).json({
-            ok: false,
-            message: 'You must pass a list algorithms.'
-        });
-    }
-
-    if (!isAnyAlgorithms(algorithms)) {
-        return res.status(400).json({
-            ok: false,
-            message: 'You must pass one or more algorithms.'
-        });
-    }
-
-    let time = new Time({
-        user: user_id,
-        jobName: jobName,
-        jobDescription: jobDescription
-    });
-
-    time.save((err, timeDB) => {
+    var params = {
+    Bucket: `${ process.env.BUCKET_AWS_S3 }`, 
+    Key: fileName
+    };
+    s3.getObject(params, async(err, data) => {
         if (err) {
-            return res.status(500).json({
+            while (containers.length > 0) {
+                let containerLiberate = containers.shift();
+                await liberateContainer(containerLiberate, platform);
+            }
+            return res.status(404).json({
                 ok: false,
-                err
+                message: 'File does not exist.'
             });
         }
 
-        let job = new Job({
-            name: jobName,
-            description: jobDescription,
-            dataAlgorithms: algorithms,
-            user: user_id,
-            fileName,
-            time: timeDB._id,
-            platform,
-            userEmail: req.user.email,
-            sendEmail: req.user.sendEmail
-        });
 
-        job.save(async(err, jobDB) => {
+        let jobName = req.body.jobName;
+        if (!jobName) {
+            res.message = 'You must pass a jobName.';
+            return res.status(400).json({
+                ok: false,
+                message: 'You must pass a jobName.'
+            });
+        }
+        let jobDescription = req.body.jobDescription || '';
+    
+        let algorithms = JSON.parse(req.body.algorithms);
+        if (!algorithms) {
+            return res.status(400).json({
+                ok: false,
+                message: 'You must pass a list algorithms.'
+            });
+        }
+    
+        if (!isAnyAlgorithms(algorithms)) {
+            return res.status(400).json({
+                ok: false,
+                message: 'You must pass one or more algorithms.'
+            });
+        }
+    
+        let time = new Time({
+            user: user_id,
+            jobName: jobName,
+            jobDescription: jobDescription
+        });
+    
+        time.save((err, timeDB) => {
             if (err) {
                 return res.status(500).json({
                     ok: false,
                     err
                 });
             }
-
-            containers = await updateContainerWithJobId(containers, jobDB._id, platform);
-
-            mainManagerJobLauncher();
-            
-            console.log('Guardado job');
     
-            return res.json({
-                ok: true,
-                job: jobDB,
-                containers
+            let job = new Job({
+                name: jobName,
+                description: jobDescription,
+                dataAlgorithms: algorithms,
+                user: user_id,
+                fileName,
+                time: timeDB._id,
+                platform,
+                userEmail: req.user.email,
+                sendEmail: req.user.sendEmail
             });
     
+            job.save(async(err, jobDB) => {
+                if (err) {
+                    return res.status(500).json({
+                        ok: false,
+                        err
+                    });
+                }
+    
+                containers = await updateContainerWithJobId(containers, jobDB._id, platform);
+    
+                mainManagerJobLauncher();
+                
+                console.log('Guardado job');
+        
+                return res.json({
+                    ok: true,
+                    job: jobDB,
+                    containers
+                });
+        
+            });
         });
+
     });
 
 });

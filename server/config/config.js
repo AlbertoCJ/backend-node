@@ -9,7 +9,9 @@ process.env.MONGODB_URI_WEKA_NODE = process.env.MONGODB_URI_WEKA_NODE;
 process.env.MONGODB_URI_WEKA_JAVA = process.env.MONGODB_URI_WEKA_JAVA;
 
 // Path files dataset
-process.env.PATH_FILES_DATASET = 'uploads/filesDatasets';
+process.env.BUCKET_AWS_S3 = process.env.BUCKET_AWS_S3 || 'filesdatasets';
+// process.env.PATH_FILES_DATASET = 'uploads/filesDatasets';
+process.env.PATH_FILES_DATASET = process.env.PATH_FILES_DATASET || `https://${ process.env.BUCKET_AWS_S3 }.s3.amazonaws.com/`; 
 // Extensions allowed
 process.env.EXTENSION_ALLOWED = ['arff'];
 
