@@ -40,8 +40,9 @@ getNumberAlgorithmsWaiting = (job) => {
 }
 
 // Actualiza los contenedores en DB
-updateAWSContainerLaunching = async(userId, jobId) => {
-    await AwsContainer.find({ "User_id": userId, "Job_id": jobId, "Working": false, Status: 'Launching' }, async(err, listContainers) => {
+updateAWSContainerLaunching = async() => { // userId, jobId
+    // await AwsContainer.find({ "User_id": userId, "Job_id": jobId, "Working": false, Status: 'Launching' }, async(err, listContainers) => {
+    await AwsContainer.find({ "Working": false, Status: 'Launching' }, async(err, listContainers) => {    
         if (err) {
             return [];
         }
@@ -131,7 +132,7 @@ getContainersFree = async(numContainersGet, userId, jobId, platform) => {
             if (listContainers) {
                 for (let i = 0; i < numContainersGet && i < listContainers.length; i++) {
                     let container = listContainers[i];
-                    await LocalContainer.findByIdAndUpdate(container._id, { User_id: userId, Job_id: jobId }, { new: true }, (err, containerUpdated) => {
+                    await AwsContainer.findByIdAndUpdate(container._id, { User_id: userId, Job_id: jobId }, { new: true }, (err, containerUpdated) => {
                         if (containerUpdated) {
                             containersUpdated.push(containerUpdated);
                         }

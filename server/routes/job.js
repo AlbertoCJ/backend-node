@@ -9,7 +9,9 @@ const path = require('path');
 const app = express();
 const {
     isAnyAlgorithms,
-    updateContainerWithJobId
+    updateContainerWithJobId,
+    updateAWSContainerFree,
+    getMyContainersAws
 } = require('../impl/jobImpl');
 const {
     mainManagerJobLauncher
@@ -157,6 +159,9 @@ app.post('/job', verifyToken, async(req, res) => {
     let platform = req.body.platform;
     let fileName = req.body.fileName;
     let containers = JSON.parse(req.body.containers) || [];
+
+    // actualiza hora de contenedores libres
+    await updateAWSContainerFree();
 
     // Inicia cronJob
     cronJobTask.start();
@@ -306,8 +311,16 @@ app.put('/job/:id', verifyToken, (req, res) => {
     });
 });
 
-app.delete('/job/:id', verifyToken, (req, res) => {
+app.delete('/job/:id', verifyToken, async(req, res) => {
     let id = req.params.id;
+    let user_id = req.user._id;
+
+    // Liberar container
+    let containersAws = await getMyContainersAws(user_id, id);
+
+    containersAws.forEach( async containerLiberate => {
+        await liberateContainer(containerLiberate, 'AWS');
+    });
 
     Job.findByIdAndRemove(id, (err, jobRemoved) => {
 

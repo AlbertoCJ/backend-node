@@ -11,8 +11,14 @@ const app = express();
 const elasticbeanstalk = new AWS.ElasticBeanstalk();
 
 app.post('/createWorker', verifyToken, (req, res) => {
-   
+  
+  let withoutUser = (req.body.withoutUser == 'true');
   let user_id = req.user._id;
+
+  if (withoutUser ) {
+    console.log('Entra withoutUser user_id a cadena vacia');
+    user_id = '';
+  }
 
   let date = new Date();
   let appName = `jguwekar${ date.getMonth()}-${ date.getDay()}-${ date.getMilliseconds() }`;
@@ -125,35 +131,80 @@ app.post('/createWorker', verifyToken, (req, res) => {
 
 app.get('/env', verifyToken, (req, res) => {
 
-  // [`${appName}-env`]
-
-  let environmentNames = req.environmentNames;
-
-  let params = {};
-
-  if (environmentNames) {
-    params.EnvironmentNames = environmentNames;
-  }
-
-   elasticbeanstalk.describeEnvironments(params, function(err, data) {
-     if (err) { // an error occurred
+  AwsContainer.find({}, async(err, listContainers) => {
+    if (err) {
       return res.status(500).json({
         ok: false,
         err
       });
-     } else {  // successful response      
-      res.json({
-        ok: true,
-        environments: data.Environments
-      });
-     }         
-   });
+    }
+    if (listContainers) {
+        // return listContainers;
+        listContainers.forEach(async awsContainerDB => {
+            let params = {
+                EnvironmentNames: [
+                    awsContainerDB.Environment_name[0]
+                ]
+            };
+            await elasticbeanstalk.describeEnvironments(params, async function(err, dataGetEnvironment) {
+                if (err) console.log(err, err.stack); // an error occurred
+                else {  // successful response  
+                    let dataEnv = dataGetEnvironment.Environments[0];
+                    
+                    let awsContainerUpdate = {
+                        Health: dataEnv.Health,
+                        Health_status: dataEnv.HealthStatus,
+                        Status: dataEnv.Status,
+                        Endpoint_URL: dataEnv.EndpointURL
+                    };
+            
+                    await AwsContainer.findByIdAndUpdate(awsContainerDB._id, awsContainerUpdate, { new: true })
+                    .then(containerUpdated => {
+                        awsContainerDB = containerUpdated;
+                    })
+                    .catch(err => {
+                        console.error(err);
+                    });
+                }         
+            });
+        });
+        res.json({
+          ok: true,
+          containersAws: listContainers
+        });
+    }
+  });
+
+  // [`${appName}-env`]
+
+  // let environmentNames = req.environmentNames;
+
+  // let params = {};
+
+  // if (environmentNames) {
+  //   params.EnvironmentNames = environmentNames;
+  // }
+
+  //  elasticbeanstalk.describeEnvironments(params, function(err, data) {
+  //    if (err) { // an error occurred
+  //     return res.status(500).json({
+  //       ok: false,
+  //       err
+  //     });
+  //    } else {  // successful response      
+  //     res.json({
+  //       ok: true,
+  //       environments: data.Environments
+  //     });
+  //    }         
+  //  });
 });
 
 
 app.delete('/app', verifyToken, (req, res) => {
 
   let applicationName = req.query.applicationName;
+  let containerId = req.query.containerId;
 
   let params = {
     ApplicationName: applicationName,
@@ -166,12 +217,20 @@ app.delete('/app', verifyToken, (req, res) => {
         ok: false,
         err
       });
-    } else {     // successful response
-      res.json({
-        ok: true,
-        data
+    }   
+  });
+
+  AwsContainer.findByIdAndRemove(containerId, (err, containerRemoved) => {
+    if (err) {
+      return res.status(500).json({
+        ok: false,
+        err
       });
-    }    
+    }
+    res.json({
+      ok: true,
+      containerRemoved
+    });
   });
 });
 

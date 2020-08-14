@@ -28,3 +28,6 @@ process.env.TIME_TO_REMOVE_CONTAINERS = process.env.TIME_TO_REMOVE_CONTAINERS | 
 // Config Email
 process.env.EMAIL = process.env.EMAIL || 'null';
 process.env.EMAIL_PASS = process.env.EMAIL_PASS || 'null';
+
+// Containers actives
+process.env.CONTAINERS_EXCLUDED = process.env.CONTAINERS_EXCLUDED || 0;

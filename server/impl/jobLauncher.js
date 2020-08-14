@@ -62,7 +62,7 @@ mainManagerJobLauncher = async() => {
 
             if (job.platform === 'AWS') {
                 // Actualiza en BD el estado de los contenedores en aws lanzados
-                await updateAWSContainerLaunching(job.user.toString(), job._id.toString());
+                await updateAWSContainerLaunching(); // job.user.toString(), job._id.toString()
             }
     
     
@@ -72,13 +72,14 @@ mainManagerJobLauncher = async() => {
                 let numAlgorithmsWaiting = getNumberAlgorithmsWaiting(job);
     
                 // if (numAlgorithmsWaiting > 0) {
-                    containersOwn = await getContainersOwn(job.user.toString(), job._id.toString(), job.platform);
-    
+                containersOwn = await getContainersOwn(job.user.toString(), job._id.toString(), job.platform);
+
                 if (numAlgorithmsWaiting > containersOwn.length) { // Si hay más algoritmos que contenedores.
                     // Obtener contenedores si hay libres.
                     let numContainers = numAlgorithmsWaiting - containersOwn.length;
                     let containersFree = await getContainersFree(numContainers, job.user, job._id, job.platform);
                     containersOwn = containersOwn.concat(containersFree);
+                    
                 } else if (numAlgorithmsWaiting < containersOwn.length) { // Si hay menos algoritmos que contenedores.
                     // Libero contenedores si no son necesarios.
                     let numContainers = containersOwn.length - numAlgorithmsWaiting;

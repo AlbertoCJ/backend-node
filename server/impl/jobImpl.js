@@ -1,5 +1,8 @@
 const LocalContainer = require('../models/wekaDB/localContainer');
 const AwsContainer = require('../models/wekaDB/awsContainer');
+const AWS = require('aws-sdk');
+AWS.config.update({region:'us-east-1'});
+const elasticbeanstalk = new AWS.ElasticBeanstalk();
 
 isAnyAlgorithms = (objectAlgorithms) => {
     if (objectAlgorithms.linearRegression.algorithm ||
@@ -48,7 +51,66 @@ updateContainerWithJobId = async(containers, jobId, platform) => {
     return updateContainers;
 }
 
+// Actualiza la hora en los contenedores en DB
+updateAWSContainerFree = async() => { // userId, jobId
+    await AwsContainer.find({ Job_id: '', User_id: '' }, async(err, listContainers) => {    
+        if (err) {
+            return [];
+        }
+        if (listContainers) {
+            // return listContainers;
+            listContainers.forEach(async awsContainerDB => {
+                let params = {
+                    EnvironmentNames: [
+                        awsContainerDB.Environment_name[0]
+                    ]
+                };
+                await elasticbeanstalk.describeEnvironments(params, async function(err, dataGetEnvironment) {
+                    if (err) console.log(err, err.stack); // an error occurred
+                    else {  // successful response  
+                        let dataEnv = dataGetEnvironment.Environments[0];
+                        
+                        let awsContainerUpdate = {
+                            Health: dataEnv.Health,
+                            Health_status: dataEnv.HealthStatus,
+                            Status: dataEnv.Status,
+                            Endpoint_URL: dataEnv.EndpointURL,
+                            Date_work_end: new Date()
+                        };
+                
+                        await AwsContainer.findByIdAndUpdate(awsContainerDB._id, awsContainerUpdate, { new: true })
+                        .then(containerUpdated => {
+                            // return containerUpdated;
+                            // updateContainers.push(containerUpdated);
+                        })
+                        .catch(err => {
+                            console.error(err);
+                        });
+
+                    }         
+                });
+            });
+        }
+    });
+}
+
+// Obtiene los contenedores del usuario y del job asignado
+getMyContainersAws = async(userId, jobId) => {
+    let containersOwn = [];
+    containersOwn = await AwsContainer.find({ "User_id": userId, "Job_id": jobId }, async(err, listContainers) => {
+        if (err) {
+            return [];
+        }
+        if (listContainers) {
+            return listContainers;
+        }
+    });
+    return containersOwn;
+}
+
 module.exports = {
     isAnyAlgorithms,
-    updateContainerWithJobId
+    updateContainerWithJobId,
+    updateAWSContainerFree,
+    getMyContainersAws
 }
