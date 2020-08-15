@@ -99,12 +99,8 @@ const cronJobTask = new CronJob(`0 */${process.env.TIME_TO_RUN_CRONJOB} * * * *`
                         }
                     });
                 }
-                console.log('listContainersNoRemove', listContainersNoRemove);
-                console.log('listContainersNoRemove.length', listContainersNoRemove.length);
                 if (listContainersNoRemove.length <= containersExcluded) {
-                    console.log('Pasa primer if');
                     if (areAllContainersFree(listContainers)) {
-                        console.log('pone thereAreAwsContainers a false');
                         thereAreAwsContainers = false;
                     }
                 }

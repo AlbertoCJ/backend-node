@@ -313,6 +313,7 @@ app.put('/job/:id', verifyToken, (req, res) => {
 
 app.delete('/job/:id', verifyToken, async(req, res) => {
     let id = req.params.id;
+    let timeId = req.body.timeId;
     let user_id = req.user._id;
 
     // Liberar container
@@ -321,6 +322,10 @@ app.delete('/job/:id', verifyToken, async(req, res) => {
     containersAws.forEach( async containerLiberate => {
         await liberateContainer(containerLiberate, 'AWS');
     });
+
+    if (timeId) {
+        Time.findByIdAndRemove(timeId, (err, jobRemoved) => {});
+    }
 
     Job.findByIdAndRemove(id, (err, jobRemoved) => {
 
