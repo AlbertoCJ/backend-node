@@ -279,7 +279,7 @@ isPartial = (job) => {
                 // partial = true;
             } else if(dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status === 'OK' && dataAlgorithms[key].task && dataAlgorithms[key].task.status === 'COMPLETED' && dataAlgorithms[key].model) {
                 // partial = true;
-            } else {
+            } else if(dataAlgorithms[key].algorithm) {
                 partial = false;
             }
         }
@@ -292,11 +292,13 @@ isFullError = (job) => {
     let dataAlgorithms = job.dataAlgorithms;
     for (const key in dataAlgorithms) {
         if (dataAlgorithms.hasOwnProperty(key) && error) {
-            if (dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status === 'ERROR') {
+            if (dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status !== 'ERROR') {
                 // error = true;
-            } else {
                 error = false;
-            }
+            } 
+            // else {
+            //     error = false;
+            // }
         }
     }
     return error;

@@ -138,6 +138,9 @@ mainManagerJobLauncher = async() => {
     
                             } else {
                                 currentAlgorithm.algorithm.errorList.push('Error with container launching algorithm.');
+                                if (promise.response && promise.response.statusText) {
+                                    currentAlgorithm.algorithm.errorList.push(promise.response.statusText);
+                                }
                                 currentAlgorithm.algorithm.status = 'ERROR';
                                 // Release container
                                 let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);

@@ -120,6 +120,7 @@ const cronJobTask = new CronJob(`0 */${process.env.TIME_TO_RUN_CRONJOB} * * * *`
     // Parar cronJob
     if (!thereAreLocalContainers && !thereAreAwsContainers && !thereAreJobsRunning) { // && stopCron
         cronJobTask.stop()
+        console.log('Cron Job Stop');
     }
 });
 

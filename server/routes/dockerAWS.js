@@ -42,7 +42,8 @@ app.post('/createWorker', verifyToken, (req, res) => {
           Process: true, 
           SourceBundle: {
            S3Bucket: "elasticbeanstalk-us-east-1-389195895864", 
-           S3Key: "20201617R2-Dockerrun.zip"
+           S3Key: "Dockerrun.zip"
+          //  S3Key: "20201617R2-Dockerrun.zip"
           },
           VersionLabel: "v1"
          };
