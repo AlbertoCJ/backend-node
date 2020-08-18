@@ -168,6 +168,9 @@ mainManagerJobLauncher = async() => {
     
                                         } else if (taskUpdated.status === 'ERROR') {
                                             currentAlgorithm.algorithm.errorList.push('Error with the algorithm execution task.');
+                                            if (taskUpdated.errorReport && taskUpdated.errorReport.message) {
+                                                currentAlgorithm.algorithm.errorList.push(taskUpdated.errorReport.message);
+                                            }
                                             currentAlgorithm.algorithm.status = 'ERROR';
                                             // Release container
                                             let containerReleased = await releaseContainer(currentAlgorithm.container, job.platform);

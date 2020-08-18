@@ -16,7 +16,6 @@ app.post('/createWorker', verifyToken, (req, res) => {
   let user_id = req.user._id;
 
   if (withoutUser ) {
-    console.log('Entra withoutUser user_id a cadena vacia');
     user_id = '';
   }
 
@@ -42,8 +41,9 @@ app.post('/createWorker', verifyToken, (req, res) => {
           Process: true, 
           SourceBundle: {
            S3Bucket: "elasticbeanstalk-us-east-1-389195895864", 
-           S3Key: "Dockerrun.zip"
+           //  S3Key: "Dockerrun.zip"
           //  S3Key: "20201617R2-Dockerrun.zip"
+          S3Key: "Dockerrun-t2.medium.zip"
           },
           VersionLabel: "v1"
          };

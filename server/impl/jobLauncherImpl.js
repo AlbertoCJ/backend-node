@@ -292,10 +292,12 @@ isFullError = (job) => {
     let dataAlgorithms = job.dataAlgorithms;
     for (const key in dataAlgorithms) {
         if (dataAlgorithms.hasOwnProperty(key) && error) {
-            if (dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status !== 'ERROR') {
+            if (dataAlgorithms[key].algorithm && dataAlgorithms[key].algorithm.status === 'ERROR') {
                 // error = true;
+                // error = false;
+            }  else if(dataAlgorithms[key].algorithm) {
                 error = false;
-            } 
+            }
             // else {
             //     error = false;
             // }
