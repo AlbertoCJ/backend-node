@@ -28,6 +28,10 @@ process.env.TIME_TO_REMOVE_CONTAINERS = process.env.TIME_TO_REMOVE_CONTAINERS | 
 // Config Email
 process.env.EMAIL = process.env.EMAIL || 'null';
 process.env.EMAIL_PASS = process.env.EMAIL_PASS || 'null';
+process.env.OAUTH2_CLIENT_ID = process.env.OAUTH2_CLIENT_ID || 'null';
+process.env.OAUTH2_CLIENT_SECRET = process.env.OAUTH2_CLIENT_SECRET || 'null';
+process.env.OAUTH2_REFRESH_TOKEN = process.env.OAUTH2_REFRESH_TOKEN || 'null';
+
 
 // Containers actives
 process.env.CONTAINERS_EXCLUDED = process.env.CONTAINERS_EXCLUDED || 0;
