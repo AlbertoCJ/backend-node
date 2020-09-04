@@ -15,12 +15,10 @@ let timeSchema = new Schema({
         type: String
     },
     dateCreation: {
-        type: Date,
-        default: new Date()
+        type: Date
     },
     start: {
-        type: Date,
-        default: new Date()
+        type: Date
     },
     end: {
         type: Date

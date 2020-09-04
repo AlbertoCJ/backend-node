@@ -237,10 +237,13 @@ app.post('/job', verifyToken, async(req, res) => {
             });
         }
     
+        let newDate = new Date();
         let time = new Time({
             user: user_id,
             jobName: jobName,
-            jobDescription: jobDescription
+            jobDescription: jobDescription,
+            dateCreation: newDate,
+            start: newDate
         });
     
         time.save((err, timeDB) => {

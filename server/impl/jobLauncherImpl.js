@@ -308,7 +308,8 @@ isFullError = (job) => {
 
 // Actualizar time al finalizar job
 updateTime = async(job) => {
-    await Time.findByIdAndUpdate(job.time, { hasStatus: job.hasStatus, end: new Date() }, { new: true })
+    let newDate = new Date();
+    await Time.findByIdAndUpdate(job.time, { hasStatus: job.hasStatus, end: newDate }, { new: true })
         .then(timeUpdated => {
             return timeUpdated;
         })
